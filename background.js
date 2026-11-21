@@ -142,8 +142,8 @@ chrome.tabs.onUpdated.addListener(guard(async (tabId, change, tab) => {
     ownTabIds.add(tabId);
     return;
   }
-  const liveTabs = await chrome.tabs.query({});
-  const live = new Set(liveTabs.map((item) => item.id));
+  // 标题/图标更新不带 url：跳过全量 tabs.query（页面加载期这类事件最频繁）
+  const live = change.url ? new Set((await chrome.tabs.query({})).map((item) => item.id)) : null;
   await updateState((state) => {
     const temp = state.temps.find((item) => item.tabId === tabId);
     if (temp) {
@@ -151,7 +151,7 @@ chrome.tabs.onUpdated.addListener(guard(async (tabId, change, tab) => {
       if (tab.title) temp.liveTitle = tab.title;
       if (tab.favIconUrl) temp.favIconUrl = tab.favIconUrl;
       temp.windowId = tab.windowId;
-      if (url) {
+      if (url && live) {
         const dead = state.temps.find((item) => (
           item.id !== temp.id
           && !live.has(item.tabId)

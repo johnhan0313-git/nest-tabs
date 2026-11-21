@@ -35,7 +35,7 @@ panel/actions.js       全部写操作：保存、打开/聚焦标签、复制�
 panel/dnd.js           拖放排序与「临时 → 固定」
 panel/util.js          纯工具函数
 lib/model.js           纯函数领域层：状态结构、树操作、URL 归一化、标签组导入
-lib/store.js           storage 读写（Web Locks 互斥 + rev 版本号）
+lib/store.js           storage 读写（Web Locks 互斥 + rev 版本号 + 内容无变化不落库）
 lib/model.test.js      领域层单元测试（node:test）
 lib/previewData.js     预览页 mock 数据（用真实模型函数构建，结构自动同步）
 lib/previewData.test.js 预览数据结构契约测试
@@ -81,12 +81,14 @@ npm test          # 等价于 node --test lib/*.test.js
 ```
 
 测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入、
-图标取用顺序等）与 `lib/previewData.js` 的结构契约，当前 26 个用例。
+图标取用顺序、损坏数据修剪）、`lib/store.js` 的写入策略与 `lib/previewData.js` 的结构契约，
+当前 30 个用例。
 
 ## 架构说明
 
-- **background.js**：监听 `tabs.onCreated/onUpdated/onRemoved/onReplaced` 维护 `temps`；
-  `alarms.sweep` 每分钟清扫过期标签（同时把 `chrome://` 等内部页面移出跟踪，但不关闭其标签）；
+- **background.js**：监听 `tabs.onCreated/onUpdated/onRemoved/onReplaced` 维护 `temps`
+  （标题/图标类更新跳过全量 `tabs.query`）；`alarms.sweep` 每分钟清扫过期标签
+  （同时把 `chrome://` 等内部页面移出跟踪，但不关闭其标签）；
   用 `ownTabIds / pendingUrls / suppressNewTemps` 抑制自家打开的标签被误记为临时标签；
   安装/启动时收编并重绑定现有标签。
 - **图标取用**：`faviconSources()` 按 保存的真实图标 → Chrome 内置 `_favicon`
@@ -97,3 +99,4 @@ npm test          # 等价于 node --test lib/*.test.js
   监听 storage 与 tabs 变化做防抖刷新；编辑、拖拽、菜单等 `busy()` 状态下挂起刷新
   并标记 `dirty`，避免打断用户操作。
 - **lib/**：不依赖 Chrome API 的纯函数，是唯一可单测的层；UI 与 SW 只做编排。
+  `normalizeLoaded` 会在加载时修剪损坏数据（未知节点、非法字段），保证渲染层永远拿到合法结构。
