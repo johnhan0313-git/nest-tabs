@@ -22,7 +22,18 @@ Chrome 侧边栏扩展：用**可嵌套的文件夹**收纳标签并自定义名
 ```
 manifest.json          MV3 配置（权限、side panel、图标）
 background.js          Service Worker：标签生命周期监听 + TTL 定时清扫
-sidepanel.html/css/js  侧边栏 UI（渲染、交互、搜索、拖拽）
+sidepanel.html/css     侧边栏外壳与样式
+sidepanel.js           入口：全局事件绑定、启动
+panel/state.js         共享状态（ui/state/tabs/active）与刷新、闪提示、提交
+panel/render.js        顶层渲染编排（分区、滚动/焦点保持）
+panel/rows.js          树与临时标签行：文件夹/网页/临时行、折叠动画、重命名
+panel/dom.js           通用 DOM/SVG 小部件（图标、按钮、占位）
+panel/menu.js          右键菜单、确认框、浮层翻转
+panel/peek.js          折叠文件夹的 hover 预览卡片
+panel/search.js        搜索框、结果列表（本地树 + 历史）
+panel/actions.js       全部写操作：保存、打开/聚焦标签、复制、导入标签组
+panel/dnd.js           拖放排序与「临时 → 固定」
+panel/util.js          纯工具函数
 lib/model.js           纯函数领域层：状态结构、树操作、URL 归一化、标签组导入
 lib/store.js           storage 读写（Web Locks 互斥 + rev 版本号）
 lib/model.test.js      领域层单元测试（node:test）
@@ -81,6 +92,8 @@ npm test          # 等价于 node --test lib/*.test.js
 - **图标取用**：`faviconSources()` 按 保存的真实图标 → Chrome 内置 `_favicon`
   （本地缓存，内网/离线可用，需 `favicon` 权限）→ Google s2 兜底 逐级回退，
   全部失败时显示占位块。
-- **sidepanel.js**：监听 storage 与 tabs 变化做防抖刷新；编辑、拖拽、菜单等
-  `busy()` 状态下挂起刷新并标记 `dirty`，避免打断用户操作。
+- **sidepanel**：按职责拆在 `panel/` 下（状态 / 渲染 / 行 / 菜单 / 预览 / 搜索 /
+  动作 / 拖放 / DOM 小部件），模块间用 ESM live binding 共享 `state/tabs/active/ui`；
+  监听 storage 与 tabs 变化做防抖刷新；编辑、拖拽、菜单等 `busy()` 状态下挂起刷新
+  并标记 `dirty`，避免打断用户操作。
 - **lib/**：不依赖 Chrome API 的纯函数，是唯一可单测的层；UI 与 SW 只做编排。
