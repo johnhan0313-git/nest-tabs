@@ -26,6 +26,8 @@ sidepanel.html/css/js  侧边栏 UI（渲染、交互、搜索、拖拽）
 lib/model.js           纯函数领域层：状态结构、树操作、URL 归一化、标签组导入
 lib/store.js           storage 读写（Web Locks 互斥 + rev 版本号）
 lib/model.test.js      领域层单元测试（node:test）
+lib/previewData.js     预览页 mock 数据（用真实模型函数构建，结构自动同步）
+lib/previewData.test.js 预览数据结构契约测试
 preview.html           UI 预览页（mock 数据，无需加载扩展）
 icons/                 16 / 32 / 48 / 128 图标
 ```
@@ -67,7 +69,8 @@ state = {
 npm test          # 等价于 node --test lib/*.test.js
 ```
 
-测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入等），当前 18 个用例。
+测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入等）
+与 `lib/previewData.js` 的结构契约，当前 22 个用例。
 
 ## 架构说明
 

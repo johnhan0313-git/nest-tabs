@@ -8,73 +8,14 @@
   </head>
   <body class="preview">
     <div id="app"></div>
-    <script>
+    <script type="module">
+      import { createPreviewData } from "./lib/previewData.js";
+
       const params = new URLSearchParams(location.search);
       const now = Date.now();
       const empty = params.get("empty") === "1";
-      const mem = {
-        seq: 20,
-        state: empty ? {
-          version: 1,
-          rev: 1,
-          roots: [],
-          temps: [],
-          settings: { tempTtlHours: 24 },
-        } : {
-          version: 1,
-          rev: 1,
-          settings: { tempTtlHours: 24 },
-          roots: [
-            {
-              type: "folder",
-              id: "f-pay",
-              name: "支付组",
-              color: "#3d6dff",
-              collapsed: false,
-              children: [
-                { type: "pin", id: "p-lib", url: "https://artifacts.example.com", customName: "制品库", favIconUrl: "" },
-                { type: "pin", id: "p-code", url: "https://code.example.com", customName: "代码库", favIconUrl: "" },
-                {
-                  type: "folder",
-                  id: "f-test",
-                  name: "测试环境",
-                  color: "#7c4dff",
-                  collapsed: false,
-                  children: [
-                    { type: "pin", id: "p-matrix", url: "https://matrix.example.com", customName: "Matrix Admin", favIconUrl: "" },
-                  ],
-                },
-              ],
-            },
-            {
-              type: "folder",
-              id: "f-prod",
-              name: "生产环境",
-              color: "#e84393",
-              collapsed: true,
-              children: [
-                { type: "pin", id: "p-ops", url: "https://ops.example.com", customName: "支付中台运营系统", favIconUrl: "" },
-              ],
-            },
-          ],
-          temps: [
-            { id: "t-docs", tabId: 11, windowId: 1, url: "https://docs.example.com/open", liveTitle: "支付中台开放平台", customName: "", favIconUrl: "", openedAt: now - 2 * 3600000 },
-            { id: "t-mq", tabId: 12, windowId: 1, url: "https://mq.example.com", liveTitle: "rocketmq", customName: "", favIconUrl: "", openedAt: now - 23.2 * 3600000 },
-          ],
-        },
-        tabs: empty ? [] : [
-          { id: 11, windowId: 1, url: "https://docs.example.com/open", title: "支付中台开放平台", active: true },
-          { id: 12, windowId: 1, url: "https://mq.example.com", title: "rocketmq", active: false },
-          { id: 13, windowId: 1, url: "https://matrix.example.com", title: "Matrix Admin", active: false },
-          { id: 14, windowId: 1, index: 2, groupId: 7, url: "chrome://newtab/", title: "新标签页", active: false },
-          { id: 15, windowId: 1, index: 3, groupId: 7, url: "https://grafana.example.com", title: "应用监控-grafana", active: false },
-          { id: 16, windowId: 1, index: 4, groupId: 8, url: "https://ops.example.com", title: "支付中台运营系统", active: false },
-        ],
-        groups: [
-          { id: 7, windowId: 1, title: "监控", color: "cyan", collapsed: false },
-          { id: 8, windowId: 1, title: "生产环境", color: "red", collapsed: true },
-        ],
-      };
+      const { state, tabs, groups, seq } = createPreviewData({ empty, now });
+      const mem = { seq, state, tabs, groups };
       const listeners = { storage: [], tabs: {} };
       function emit(name, arg) {
         for (const fn of listeners.tabs[name] || []) fn(arg);
