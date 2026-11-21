@@ -98,7 +98,7 @@
             return all.filter((item) => item.title.toLowerCase().includes(q) || item.url.includes(q));
           },
         },
-        runtime: {},
+        runtime: { getURL: (path) => path },
       };
       globalThis.__mem = mem;
     </script>

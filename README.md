@@ -69,14 +69,18 @@ state = {
 npm test          # 等价于 node --test lib/*.test.js
 ```
 
-测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入等）
-与 `lib/previewData.js` 的结构契约，当前 22 个用例。
+测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入、
+图标取用顺序等）与 `lib/previewData.js` 的结构契约，当前 26 个用例。
 
 ## 架构说明
 
 - **background.js**：监听 `tabs.onCreated/onUpdated/onRemoved/onReplaced` 维护 `temps`；
-  `alarms.sweep` 每分钟清扫过期标签；用 `ownTabIds / pendingUrls / suppressNewTemps`
-  抑制自家打开的标签被误记为临时标签；安装/启动时收编并重绑定现有标签。
+  `alarms.sweep` 每分钟清扫过期标签（同时把 `chrome://` 等内部页面移出跟踪，但不关闭其标签）；
+  用 `ownTabIds / pendingUrls / suppressNewTemps` 抑制自家打开的标签被误记为临时标签；
+  安装/启动时收编并重绑定现有标签。
+- **图标取用**：`faviconSources()` 按 保存的真实图标 → Chrome 内置 `_favicon`
+  （本地缓存，内网/离线可用，需 `favicon` 权限）→ Google s2 兜底 逐级回退，
+  全部失败时显示占位块。
 - **sidepanel.js**：监听 storage 与 tabs 变化做防抖刷新；编辑、拖拽、菜单等
   `busy()` 状态下挂起刷新并标记 `dirty`，避免打断用户操作。
 - **lib/**：不依赖 Chrome API 的纯函数，是唯一可单测的层；UI 与 SW 只做编排。

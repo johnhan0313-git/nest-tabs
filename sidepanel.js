@@ -6,8 +6,8 @@ import {
   createFolder,
   deleteFolder,
   describeTabGroupImport,
+  faviconSources,
   importTabGroups,
-  faviconFor,
   formatAgo,
   formatRemaining,
   hostOf,
@@ -1008,22 +1008,25 @@ function svgPath(d, filled = true) {
   return svg;
 }
 
+function faviconMissing() {
+  const span = document.createElement("span");
+  span.className = "favicon missing";
+  return span;
+}
+
 function favicon(url, favIconUrl) {
-  const src = faviconFor(url, favIconUrl);
-  if (!src) {
-    const span = document.createElement("span");
-    span.className = "favicon missing";
-    return span;
-  }
+  const sources = faviconSources(url, favIconUrl, (path) => chrome.runtime.getURL?.(path) ?? path);
+  if (!sources.length) return faviconMissing();
   const img = document.createElement("img");
   img.className = "favicon";
   img.alt = "";
-  img.src = src;
+  let index = 0;
   img.addEventListener("error", () => {
-    const span = document.createElement("span");
-    span.className = "favicon missing";
-    img.replaceWith(span);
+    index += 1;
+    if (index < sources.length) img.src = sources[index];
+    else img.replaceWith(faviconMissing());
   });
+  img.src = sources[0];
   return img;
 }
 

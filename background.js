@@ -45,6 +45,8 @@ async function sweep() {
   const now = Date.now();
   let expiredIds = [];
   await updateState((state) => {
+    // chrome:// 等内部页面不再跟踪（只从列表移除，不关闭标签）
+    state.temps = state.temps.filter((temp) => !isIgnoredUrl(temp.url));
     const { keep, expired } = partitionExpired(state.temps, now, state.settings.tempTtlHours);
     expiredIds = expired.map((temp) => temp.tabId).filter((id) => Number.isInteger(id));
     state.temps = keep;
