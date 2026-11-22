@@ -43,6 +43,7 @@ lib/dnd.test.js        拖放落点判定单元测试
 lib/previewData.js     预览页 mock 数据（用真实模型函数构建，结构自动同步）
 lib/previewChrome.js   预览页 chrome API mock（storage/tabs/history…，供预览页挂载）
 lib/previewData.test.js 预览数据结构契约测试
+background.test.js     background.js 初始化冒烟测试（chrome mock，抓时序/恢复错误）
 preview.html           UI 预览页（mock 数据，无需加载扩展）
 scripts/pack.sh        打包脚本：只挑运行时文件输出 dist/nest-tabs-<版本>.zip
 icons/                 16 / 32 / 48 / 128 图标
@@ -89,8 +90,10 @@ npm run pack      # 打包扩展 zip → dist/nest-tabs-<版本>.zip（需系统
 测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化 / 相等性、TTL 分区、标签重绑定、
 标签组导入、图标取用顺序、损坏数据修剪）、`lib/rowKey.js` 的键控渲染 key（覆盖
 编辑 / 拖拽 / 浮层坐标 / 折叠 / 当前页 / 存活 / 倒计时等全部输入，含 temp 行路由回归）、
-`lib/dnd.js` 的拖放落点判定、`lib/store.js` 的写入策略与 `lib/previewData.js` 的结构契约，
-当前 42 个用例。
+`lib/dnd.js` 的拖放落点判定、`lib/store.js` 的写入策略、`lib/previewData.js` 的结构契约，
+以及 `background.test.js` 的 SW 初始化冒烟（chrome mock 导入 background.js，
+捕获 console.error——初始化时序错误与 storage.session 会话态恢复失败都会在此暴露），
+当前 43 个用例。
 
 ## 架构说明
 

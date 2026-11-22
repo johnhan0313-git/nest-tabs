@@ -15,7 +15,6 @@ import { updateState } from "./lib/store.js";
 const ownTabIds = new Set();
 const pendingUrls = new Map(); // 归一化 url -> 过期时间戳
 let suppressNewTemps = 0; // 仅在单次 focusOrOpen 调用内非零，无需持久化
-const swMemReady = restoreSwMem();
 
 const SW_MEM_KEY = "swMem";
 
@@ -33,6 +32,9 @@ async function restoreSwMem() {
     console.error("[嵌套标签] 恢复会话态失败", error);
   }
 }
+
+// 模块加载时启动恢复；事件 handler 经 guard 等它完成后才变异
+const swMemReady = restoreSwMem();
 
 let swMemWriteTimer = 0;
 function persistSwMem() {
