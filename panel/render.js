@@ -1,6 +1,6 @@
 import { app, boot, state, ui } from "./state.js";
 import { COPY } from "../lib/copy.js";
-import { message, reconcile } from "./dom.js";
+import { message, reconcile, settingsIcon } from "./dom.js";
 import { beginRowRender, pruneRowCache, renderClearRow, renderNewTab, renderTemps, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
 import { renderHits, renderSearch, paintResults } from "./search.js";
@@ -14,6 +14,7 @@ let scroller = null;
 let status = null;
 let saved = null;
 let savedWrap = null;
+let footer = null;
 
 function ensureShell() {
   if (shell) return;
@@ -38,7 +39,21 @@ function ensureShell() {
   savedWrap = document.createElement("div");
   bindSectionDrop(saved);
   reconcile(scroller, [status, saved]);
-  shell.append(renderSearch(), scroller, renderHits());
+
+  footer = document.createElement("footer");
+  footer.className = "shell-footer";
+  const settingsBtn = document.createElement("button");
+  settingsBtn.type = "button";
+  settingsBtn.className = "footer-btn";
+  settingsBtn.title = COPY.actions.settings;
+  settingsBtn.setAttribute("aria-label", COPY.actions.settings);
+  settingsBtn.append(settingsIcon());
+  settingsBtn.addEventListener("click", () => {
+    if (chrome.runtime?.openOptionsPage) chrome.runtime.openOptionsPage();
+  });
+  footer.append(settingsBtn);
+
+  shell.append(renderSearch(), scroller, renderHits(), footer);
 }
 
 export function render() {
@@ -76,13 +91,15 @@ export function render() {
   reconcile(saved, state.roots.length ? [savedWrap] : []);
 
   const temps = state.temps.length;
-  const scrollerItems = [status, renderNewTab(), saved];
+  const scrollerItems = [status, saved];
   if (temps) {
-    scrollerItems.push(renderClearRow(), renderTemps());
+    scrollerItems.push(renderClearRow(), renderNewTab(), renderTemps());
+  } else {
+    scrollerItems.push(renderNewTab());
   }
   reconcile(scroller, scrollerItems);
 
-  const shellItems = [renderSearch(), scroller, renderHits()];
+  const shellItems = [renderSearch(), scroller, renderHits(), footer];
   if (ui.menuId === "__blank__") shellItems.push(renderMenu(null, "blank"));
   reconcile(shell, shellItems);
   if (app.childElementCount !== 1 || app.firstElementChild !== shell) app.replaceChildren(shell);

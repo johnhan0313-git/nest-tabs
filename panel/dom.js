@@ -43,8 +43,8 @@ export function sectionAction(text, onClick) {
 }
 
 export function settingsIcon() {
-  // 6-tooth cog, stroke-rendered
-  return svgPath("M8 2v2.2M11.3 3.3 9.9 5.1M14 6.7l-1.8 1M15 10h-2.2M13.7 13.3 11.9 12M10 15v-2.2M6.7 13.7 8.1 12M4 11.3l1.8-1M3 8h2.2M4.3 4.7 6.1 6M6 3l1.9 1.8", false);
+  // archive / drawer box, stroke-rendered
+  return svgPath("M3 6h10v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6zM4 3h8v3H4V3zM6 9h4", false);
 }
 
 export function nameBlock(name) {
