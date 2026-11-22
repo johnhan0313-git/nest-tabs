@@ -288,13 +288,6 @@ button {
 
 .hits-empty { margin: 8px; }
 
-.status {
-  margin: 0 var(--pad) 6px;
-  color: var(--muted);
-}
-
-.status.error { color: var(--danger); }
-
 .clear-row {
   display: flex;
   align-items: center;

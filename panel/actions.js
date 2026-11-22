@@ -4,7 +4,6 @@ import {
   collectTabGroups,
   createFolder,
   deleteFolder,
-  describeTabGroupImport,
   importTabGroups,
   locate,
   pinTemp,
@@ -12,18 +11,17 @@ import {
   renameItem,
   sameUrl,
 } from "../lib/model.js";
-import { active, app, commit, fail, flash, refresh, setActive, setTabs, state, tabs, ui } from "./state.js";
+import { active, app, commit, fail, refresh, setActive, setTabs, state, tabs, ui } from "./state.js";
 import { render } from "./render.js";
 
-export async function save(mutator, success, options = {}) {
+export async function save(mutator, options = {}) {
   try {
     const ok = await commit(mutator);
     if (!ok) {
       render();
       return false;
     }
-    if (success) flash(success);
-    else if (options.paint !== false) render();
+    if (options.paint !== false) render();
     return true;
   } catch (error) {
     console.error(error);
@@ -85,7 +83,7 @@ export async function pinAt(tempId, parentId, index, folderName) {
     }
     const pin = pinTemp(draft, tempId, parentId, index);
     return pin ? draft : false;
-  }, folderName ? COPY.status.pinSavedTo(folderName) : COPY.status.pinned);
+  });
 }
 
 export async function onCloseTemp(id) {
@@ -95,7 +93,7 @@ export async function onCloseTemp(id) {
   const ok = await save((draft) => {
     draft.temps = draft.temps.filter((item) => item.id !== id);
     return draft;
-  }, COPY.status.closed);
+  });
   if (ok && Number.isInteger(temp.tabId)) await chrome.tabs.remove(temp.tabId).catch(() => {});
 }
 
@@ -105,7 +103,7 @@ export async function onRemovePin(id) {
     if (!removed) return false;
     adoptOpenTabs(draft, removed.url, tabs, Date.now());
     return draft;
-  }, COPY.status.removed);
+  });
 }
 
 export async function unpinToTemp(id) {
@@ -114,11 +112,11 @@ export async function unpinToTemp(id) {
     if (!removed) return false;
     adoptOpenTabs(draft, removed.url, tabs, Date.now());
     return draft;
-  }, COPY.status.unpinned);
+  });
 }
 
 export async function onDeleteFolder(id) {
-  await save((draft) => (deleteFolder(draft.roots, id) ? draft : false), COPY.status.deleted);
+  await save((draft) => (deleteFolder(draft.roots, id) ? draft : false));
 }
 
 export async function openUrl(url, pinId = "") {
@@ -193,7 +191,6 @@ export async function onCopyLink(id, kind) {
   }
   try {
     await writeClipboard(page.url);
-    flash(COPY.status.copiedLink);
   } catch (error) {
     console.error(error);
     fail(COPY.status.copyFailed);
@@ -248,7 +245,6 @@ export async function onImportTabGroups() {
     ]);
     const collected = collectTabGroups(groups, openTabs);
     if (!collected.length) {
-      flash(COPY.status.noTabGroups);
       return;
     }
     let result = null;
@@ -257,7 +253,6 @@ export async function onImportTabGroups() {
       return result.changed ? draft : false;
     });
     if (result && (ok || !result.changed)) {
-      flash(describeTabGroupImport(result));
       if (result.focusId) {
         app.querySelector(`.row[data-id="${CSS.escape(result.focusId)}"]`)?.scrollIntoView({ block: "nearest" });
       }
@@ -284,7 +279,7 @@ export async function onClearTemps() {
   const ok = await save((draft) => {
     draft.temps = [];
     return draft;
-  }, COPY.status.cleared);
+  });
   if (ok && ids.length) {
     await chrome.tabs.remove(ids).catch(() => {});
   }

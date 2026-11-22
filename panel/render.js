@@ -7,11 +7,10 @@ import { renderHits, renderSearch, paintResults } from "./search.js";
 import { renderPeek } from "./peek.js";
 import { bindSectionDrop } from "./dnd.js";
 
-// 顶层结构整块持久化（shell/scroller/status/已固定区），每次渲染只做
+// 顶层结构整块持久化（shell/scroller/已固定区），每次渲染只做
 // 槽位对齐 + 变化行重建：未变的行保留原元素，焦点与滚动天然不丢。
 let shell = null;
 let scroller = null;
-let status = null;
 let saved = null;
 let savedWrap = null;
 let footer = null;
@@ -31,14 +30,11 @@ function ensureShell() {
     ui.confirm = null;
     render();
   });
-  status = document.createElement("p");
-  status.setAttribute("role", "status");
-  status.hidden = true;
   saved = document.createElement("section");
   saved.className = "tree";
   savedWrap = document.createElement("div");
   bindSectionDrop(saved);
-  reconcile(scroller, [status, saved]);
+  reconcile(scroller, [saved]);
 
   footer = document.createElement("footer");
   footer.className = "shell-footer";
@@ -79,18 +75,11 @@ export function render() {
   }
   ensureShell();
 
-  const text = ui.error || ui.status;
-  status.hidden = !text;
-  if (text) {
-    status.textContent = text;
-    status.className = ui.error ? "status error" : "status";
-  }
-
   beginRowRender();
   reconcile(savedWrap, state.roots.map((node) => rowFor(node, 0)));
   reconcile(saved, state.roots.length ? [savedWrap] : []);
 
-  const scrollerItems = [status, saved, renderTempsArea()];
+  const scrollerItems = [saved, renderTempsArea()];
   reconcile(scroller, scrollerItems);
 
   const shellItems = [renderSearch(), scroller, renderHits(), footer];

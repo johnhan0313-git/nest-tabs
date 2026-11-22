@@ -9,8 +9,6 @@ export const ui = {
   loading: true,
   fatal: "",
   error: "",
-  status: "",
-  statusTimer: 0,
   menuId: null,
   menuX: 0,
   menuY: 0,
@@ -107,20 +105,13 @@ async function readTabBindings() {
 }
 
 export function flash(text) {
-  ui.status = text;
-  ui.error = "";
-  clearTimeout(ui.statusTimer);
-  ui.statusTimer = setTimeout(() => {
-    ui.status = "";
-    if (!busy()) render();
-  }, 2200);
-  render();
+  // 操作成功后不再在左上角展示提示。
+  void text;
 }
 
 export function fail(text) {
-  ui.error = text;
-  ui.status = "";
-  render();
+  // 错误信息只输出到控制台，不在左上角展示提示。
+  console.error(text);
 }
 
 export async function commit(mutator) {
