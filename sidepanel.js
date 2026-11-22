@@ -9,8 +9,7 @@ document.addEventListener("pointerdown", (event) => {
   void finishRename(ui.editingId, input.value, input.dataset.original || "");
 }, true);
 
-document.addEventListener("click", (event) => {
-  if (event.target.closest(".menu, .confirm")) return;
+function closeOverlays() {
   if (!ui.menuId && !ui.confirm) return;
   ui.menuId = null;
   ui.confirm = null;
@@ -19,7 +18,14 @@ document.addEventListener("click", (event) => {
     return;
   }
   render();
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".menu, .confirm")) return;
+  closeOverlays();
 });
+
+window.addEventListener("blur", closeOverlays);
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
