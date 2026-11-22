@@ -3,7 +3,7 @@ import { locate, moveNode } from "../lib/model.js";
 import { dropModeFor, isSelfDrop } from "../lib/dnd.js";
 import { fail, state, ui } from "./state.js";
 import { render } from "./render.js";
-import { pinAt, save } from "./actions.js";
+import { pinAt, save, unpinToTemp } from "./actions.js";
 
 /**
  * 拖拽期间的 dragging / drop-* 标记是命令式加到元素上的；
@@ -80,5 +80,26 @@ export function bindSectionDrop(section) {
     clearDragMarks();
     section.classList.remove("drop-into");
     if (drag?.kind === "temp") void pinAt(drag.id, null, Number.MAX_SAFE_INTEGER, "");
+  });
+}
+
+export function bindTempAreaDrop(area) {
+  area.addEventListener("dragover", (event) => {
+    if (ui.dragging?.kind !== "pin" || event.target.closest(".row")) return;
+    event.preventDefault();
+    area.classList.add("drop-into");
+  });
+  area.addEventListener("dragleave", (event) => {
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    area.classList.remove("drop-into");
+  });
+  area.addEventListener("drop", (event) => {
+    if (event.target.closest(".row")) return;
+    event.preventDefault();
+    const drag = ui.dragging;
+    ui.dragging = null;
+    clearDragMarks();
+    area.classList.remove("drop-into");
+    if (drag?.kind === "pin") void unpinToTemp(drag.id);
   });
 }

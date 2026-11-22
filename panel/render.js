@@ -1,7 +1,7 @@
 import { app, boot, state, ui } from "./state.js";
 import { COPY } from "../lib/copy.js";
 import { message, reconcile, settingsIcon } from "./dom.js";
-import { beginRowRender, pruneRowCache, renderClearRow, renderNewTab, renderTemps, rowFor } from "./rows.js";
+import { beginRowRender, pruneRowCache, renderTempsArea, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
 import { renderHits, renderSearch, paintResults } from "./search.js";
 import { renderPeek } from "./peek.js";
@@ -90,13 +90,7 @@ export function render() {
   reconcile(savedWrap, state.roots.map((node) => rowFor(node, 0)));
   reconcile(saved, state.roots.length ? [savedWrap] : []);
 
-  const temps = state.temps.length;
-  const scrollerItems = [status, saved];
-  if (temps) {
-    scrollerItems.push(renderClearRow(), renderNewTab(), renderTemps());
-  } else {
-    scrollerItems.push(renderNewTab());
-  }
+  const scrollerItems = [status, saved, renderTempsArea()];
   reconcile(scroller, scrollerItems);
 
   const shellItems = [renderSearch(), scroller, renderHits(), footer];

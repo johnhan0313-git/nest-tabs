@@ -13,7 +13,7 @@ import { render } from "./render.js";
 import { favicon, folderIcon, hoverAction, nameBlock, reconcile } from "./dom.js";
 import { appendOverlays } from "./menu.js";
 import { bindFolderPeek, closePeek } from "./peek.js";
-import { clearDragMarks, onDragOver, onDrop } from "./dnd.js";
+import { bindTempAreaDrop, clearDragMarks, onDragOver, onDrop } from "./dnd.js";
 import { finishRename, focusTab, onCloseTemp, onNewTab, onClearTemps, openUrl, save, closePinnedTabs } from "./actions.js";
 
 const foldMotions = new WeakMap();
@@ -186,9 +186,25 @@ function renderTemp(temp) {
 }
 
 // 新标签按钮 / 临时区 / Clear 分隔行整节持久化。
+let tempsArea = null;
 let newtabButton = null;
 let clearRow = null;
 let tempsList = null;
+
+export function renderTempsArea() {
+  if (!tempsArea) {
+    tempsArea = document.createElement("section");
+    tempsArea.className = "temps-area";
+    bindTempAreaDrop(tempsArea);
+  }
+  const items = [renderNewTab()];
+  if (state.temps.length) {
+    items.unshift(renderClearRow());
+    items.push(renderTempsList());
+  }
+  reconcile(tempsArea, items);
+  return tempsArea;
+}
 
 export function renderNewTab() {
   if (!newtabButton) {
@@ -206,7 +222,7 @@ export function renderNewTab() {
   return newtabButton;
 }
 
-export function renderClearRow() {
+function renderClearRow() {
   if (!clearRow) {
     clearRow = document.createElement("div");
     clearRow.className = "clear-row";
@@ -222,7 +238,7 @@ export function renderClearRow() {
   return clearRow;
 }
 
-export function renderTemps() {
+function renderTempsList() {
   if (!tempsList) {
     tempsList = document.createElement("div");
     tempsList.className = "temps-list";

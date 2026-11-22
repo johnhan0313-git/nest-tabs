@@ -108,6 +108,15 @@ export async function onRemovePin(id) {
   }, COPY.status.removed);
 }
 
+export async function unpinToTemp(id) {
+  await save((draft) => {
+    const removed = removePin(draft.roots, id);
+    if (!removed) return false;
+    adoptOpenTabs(draft, removed.url, tabs, Date.now());
+    return draft;
+  }, COPY.status.unpinned);
+}
+
 export async function onDeleteFolder(id) {
   await save((draft) => (deleteFolder(draft.roots, id) ? draft : false), COPY.status.deleted);
 }
