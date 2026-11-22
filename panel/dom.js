@@ -95,12 +95,14 @@ export function folderIcon(open) {
   const span = document.createElement("span");
   span.className = open ? "folder open" : "folder";
   if (open) {
+    // Filled open folder — the folder being browsed stands out.
     span.append(svgPaths([
       "M1.8 3.1h4.1l1.15 1.25H13.2c.55 0 1 .42 1 .95V6.3H1.8V3.1z",
       "M1.15 6.7h13.7l-1.45 6.2a1 1 0 0 1-.98.8H3.55a1 1 0 0 1-.98-.8L1.15 6.7z",
     ]));
   } else {
-    span.append(svgPath("M2.05 4.35c0-.8.62-1.45 1.4-1.45h2.55l1.15 1.25h5.45c.78 0 1.4.65 1.4 1.45v6.15c0 .8-.62 1.45-1.4 1.45H3.45c-.78 0-1.4-.65-1.4-1.45V4.35z"));
+    // Outlined closed folder — recedes when not in use.
+    span.append(svgPath("M3 5a1 1 0 0 1 1-1h2.5l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5z", false));
   }
   return span;
 }
