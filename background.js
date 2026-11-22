@@ -161,7 +161,7 @@ async function sweep() {
 function guard(fn) {
   return (...args) => {
     // 先等会话态恢复：未恢复就变异并写回会把旧快照覆盖上去
-    Promise.resolve()
+    return Promise.resolve()
       .then(() => swMemReady)
       .then(() => fn(...args))
       .catch((error) => console.error("[嵌套标签]", error));
@@ -320,6 +320,38 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     .catch((error) => sendResponse({ ok: false, error: error?.message || "打不开这个网址" }));
   return true;
 });
+
+/**
+ * 固定页里点 target="_blank" / window.open() 时，Chrome 会新建标签。
+ * 如果来源标签绑定着固定项，且目标仍在同一站点，就关掉新标签、把跳转拉回原标签，
+ * 这样「在项目里点菜单」不会新开一页，自定义命名和固定项归属也不变。
+ * 跨域链接放行：那本来就是用户想离开这个站点。
+ */
+chrome.webNavigation.onCreatedNavigationTarget.addListener(guard(async (details) => {
+  const sourceId = details?.sourceTabId;
+  const newTabId = details?.tabId;
+  if (!Number.isInteger(sourceId) || sourceId < 0 || !Number.isInteger(newTabId)) return;
+  const binding = tabPins.get(sourceId);
+  if (!binding) return;
+  await swMemReady;
+
+  let url = details.url || "";
+  if (!url) {
+    // 没有 host 权限时 details.url 可能为空；tabs 权限足够从新标签读到地址
+    try {
+      const tab = await chrome.tabs.get(newTabId);
+      url = tab.pendingUrl || tab.url || "";
+    } catch {
+      return;
+    }
+  }
+  if (!url || isIgnoredUrl(url) || !sameOrigin(url, binding.origin)) return;
+
+  await chrome.tabs.remove(newTabId).catch(() => {});
+  await chrome.tabs.update(sourceId, { url, active: true }).catch((error) => {
+    console.error("[嵌套标签] 把弹窗拉回原标签失败", error);
+  });
+}));
 
 async function focusOrOpen(url, pinId = "") {
   if (!url) throw new Error("没有网址");

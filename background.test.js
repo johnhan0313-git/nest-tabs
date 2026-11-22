@@ -29,10 +29,12 @@ function installChromeMock({ tabs = [], state = null } = {}) {
   };
   const updated = [];
   const created = [];
+  const removed = [];
   const mock = {
     session,
     updated,
     created,
+    removed,
     storage: { session, local, onChanged: recorder() },
     sidePanel: { async setPanelBehavior() {} },
     alarms: { async create() {}, onAlarm: recorder() },
@@ -55,7 +57,12 @@ function installChromeMock({ tabs = [], state = null } = {}) {
         created.push(url);
         return { id: 9, windowId: 1, url };
       },
-      async remove() {},
+      async get(id) {
+        return tabs.find((tab) => tab.id === id) || { id, windowId: 1, url: "" };
+      },
+      async remove(id) {
+        removed.push(id);
+      },
       onCreated: recorder(),
       onRemoved: recorder(),
       onReplaced: recorder(),
@@ -70,6 +77,7 @@ function installChromeMock({ tabs = [], state = null } = {}) {
       onStartup: recorder(),
       onMessage: recorder(),
     },
+    webNavigation: { onCreatedNavigationTarget: recorder() },
   };
   return mock;
 }
@@ -79,6 +87,7 @@ function sendFocusOrOpen(listener, message) {
 }
 
 let onMessage = null;
+let onCreatedNavigationTarget = null;
 
 test("background.js 初始化无错误，且会话态恢复/回写生效", async () => {
   const mock = installChromeMock();
@@ -114,8 +123,9 @@ test("background.js 初始化无错误，且会话态恢复/回写生效", async
     assert.ok(!(goneUrl in mock.session.data.swMem.pendingUrls), "过期的 pendingUrl 被清理");
     assert.deepEqual(mock.session.data.swMem.tabPins[7], { pinId: "p7", origin: "https://a.example" }, "绑定关系被恢复");
 
-    // 同一模块实例，复用这里注册的 onMessage 监听
+    // 同一模块实例，复用这里注册的监听
     onMessage = mock.runtime.onMessage.fns[0];
+    onCreatedNavigationTarget = mock.webNavigation.onCreatedNavigationTarget.fns[0];
   } finally {
     console.error = original;
     delete globalThis.chrome;
@@ -183,6 +193,48 @@ test("点击固定项：当前标签页不同源时新开标签", async () => {
     assert.deepEqual(mock.updated, []);
     assert.deepEqual(mock.created, ["https://codeup.example/proj-b"]);
     assert.deepEqual(mock.session.data.swMem.tabPins[9], { pinId: "pin-b", origin: "https://codeup.example" });
+  } finally {
+    delete globalThis.chrome;
+  }
+});
+
+test("固定页内同源弹窗被拉回原标签，跨域弹窗放行", async () => {
+  const mock = installChromeMock({
+    tabs: [{ id: 7, windowId: 1, url: "https://codeup.example/proj", active: true }],
+  });
+  globalThis.chrome = mock;
+  try {
+    const response = await sendFocusOrOpen(onMessage, {
+      type: "focus-or-open",
+      url: "https://codeup.example/proj",
+      pinId: "pin-proj",
+    });
+    assert.deepEqual(response, { ok: true });
+    mock.updated.length = 0;
+    mock.created.length = 0;
+
+    await onCreatedNavigationTarget({
+      sourceTabId: 7,
+      tabId: 99,
+      url: "https://codeup.example/proj/change/47",
+      windowId: 1,
+    });
+    assert.deepEqual(mock.removed, [99], "同源新标签被关掉");
+    assert.deepEqual(mock.updated, [
+      { id: 7, props: { url: "https://codeup.example/proj/change/47", active: true } },
+    ], "跳转回到原固定标签");
+    assert.deepEqual(mock.created, []);
+
+    mock.removed.length = 0;
+    mock.updated.length = 0;
+    await onCreatedNavigationTarget({
+      sourceTabId: 7,
+      tabId: 100,
+      url: "https://other.example/x",
+      windowId: 1,
+    });
+    assert.deepEqual(mock.removed, [], "跨域链接不该被拦截");
+    assert.deepEqual(mock.updated, []);
   } finally {
     delete globalThis.chrome;
   }

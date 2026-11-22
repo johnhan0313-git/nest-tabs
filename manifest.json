@@ -4,7 +4,7 @@
   "version": "1.2.12",
   "minimum_chrome_version": "116",
   "description": "用可嵌套的文件夹收纳标签，自定义名称。没放进文件夹的标签会在设定时间后关闭。",
-  "permissions": ["sidePanel", "tabs", "tabGroups", "storage", "alarms", "history", "favicon"],
+  "permissions": ["sidePanel", "tabs", "tabGroups", "storage", "alarms", "history", "favicon", "webNavigation"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

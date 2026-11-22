@@ -19,6 +19,8 @@ Chrome 侧边栏扩展：用**可嵌套的文件夹**收纳标签并自定义名
   当前标签页已经在该站点时直接在原标签页里跳转（例如在 Codeup 里切换项目不会新开标签）
 - **选中跟随标签**：固定项打开的标签页在站内跳转（SPA 改 URL）后仍保持选中，
   不会因为页面内点击丢失高亮
+- **同源弹窗拉回**：固定页里 `target="_blank"` / `window.open()` 打开的同站新标签
+  会被关掉并在原标签打开；跨域链接放行。此项需要 `webNavigation` 权限
 
 ## 目录结构
 
@@ -96,7 +98,7 @@ npm run pack      # 打包扩展 zip → dist/nest-tabs-<版本>.zip（需系统
 `lib/dnd.js` 的拖放落点判定、`lib/store.js` 的写入策略、`lib/previewData.js` 的结构契约，
 以及 `background.test.js` 的 SW 初始化冒烟（chrome mock 导入 background.js，
 捕获 console.error——初始化时序错误与 storage.session 会话态恢复失败都会在此暴露），
-当前 49 个用例（含同源就地跳转、固定项绑定与选中高亮回归）。
+当前 50 个用例（含同源就地跳转、固定项绑定与选中高亮、同源弹窗拉回回归）。
 
 ## 架构说明
 
@@ -112,6 +114,9 @@ npm run pack      # 打包扩展 zip → dist/nest-tabs-<版本>.zip（需系统
   「标签页由哪个固定项打开」：面板据此在站内跳转后仍高亮原行；点击固定项时若
   当前标签页同源，则直接 `tabs.update` 就地跳转，不再新开标签。绑定在离开该站点
   （origin 变化）或标签关闭时解除，避免残留。
+  固定页内由 `target="_blank"` / `window.open()` 产生的弹窗，经
+  `webNavigation.onCreatedNavigationTarget` 判断来源标签有绑定且目标同源后，
+  关掉新标签并把跳转拉回原标签；跨域链接不拦截。
 - **图标取用**：`faviconSources()` 按 保存的真实图标 → Chrome 内置 `_favicon`
   （本地缓存，内网/离线可用，需 `favicon` 权限）→ Google s2 兜底 逐级回退，
   全部失败时显示占位块。
