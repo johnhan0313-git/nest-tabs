@@ -78,7 +78,7 @@ button {
 
 .find:focus-visible { outline: none; }
 
-#app, .shell, .scroller, .tree, .temps, .section-head, .row, .main, .copy, .name, .meta, .empty {
+#app, .shell, .scroller, .tree, .row, .main, .copy, .name, .meta {
   min-width: 0;
   max-width: 100%;
 }
@@ -275,32 +275,30 @@ button {
 
 .status.error { color: var(--danger); }
 
-.section-head {
+.clear-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 26px;
-  padding: 6px 14px 2px;
+  gap: 10px;
+  height: 18px;
+  margin: 8px 10px 4px;
 }
 
-.section-head h2 {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--muted);
+.clear-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 
-.section-action {
-  flex: 0 0 auto;
-  margin: -4px 0;
-  padding: 4px 2px;
+.clear-action {
+  flex: none;
+  padding: 2px 4px;
+  border-radius: 4px;
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.2;
+  line-height: 1;
 }
 
-.section-action:hover { color: var(--text); }
+.clear-action:hover { background: var(--hover); color: var(--text); }
 
 .icon-btn {
   width: 22px;

@@ -14,7 +14,7 @@ import { favicon, folderIcon, hoverAction, nameBlock, reconcile } from "./dom.js
 import { appendOverlays } from "./menu.js";
 import { bindFolderPeek, closePeek } from "./peek.js";
 import { clearDragMarks, onDragOver, onDrop } from "./dnd.js";
-import { finishRename, focusTab, onCloseTemp, onNewTab, openUrl, save, closePinnedTabs } from "./actions.js";
+import { finishRename, focusTab, onCloseTemp, onNewTab, onClearTemps, openUrl, save, closePinnedTabs } from "./actions.js";
 
 const foldMotions = new WeakMap();
 let foldingCount = 0;
@@ -185,43 +185,50 @@ function renderTemp(temp) {
   return row;
 }
 
-// 临时区整节持久化：head / 新标签按钮只建一次，行按键复用。
-let tempsSection = null;
-let tempsHead = null;
+// 新标签按钮 / 临时区 / Clear 分隔行整节持久化。
 let newtabButton = null;
+let clearRow = null;
+let tempsList = null;
 
-export function renderTemps() {
-  if (!tempsSection) {
-    tempsSection = document.createElement("section");
-    tempsSection.className = "temps";
-    tempsHead = document.createElement("div");
-    tempsHead.className = "section-head";
-    const title = document.createElement("h2");
-    title.textContent = COPY.sections.temporary;
-    tempsHead.append(title);
-    newtabButton = renderNewTab();
+export function renderNewTab() {
+  if (!newtabButton) {
+    newtabButton = document.createElement("button");
+    newtabButton.type = "button";
+    newtabButton.className = "newtab";
+    const plus = document.createElement("span");
+    plus.className = "plus";
+    plus.textContent = "+";
+    const label = document.createElement("span");
+    label.textContent = COPY.actions.newTab;
+    newtabButton.append(plus, label);
+    newtabButton.addEventListener("click", () => void onNewTab());
   }
-
-  const temps = sortedTemps(state.temps);
-  const items = [tempsHead];
-  for (const temp of temps) items.push(rowFor(temp, 0));
-  items.push(newtabButton);
-  reconcile(tempsSection, items);
-  return tempsSection;
+  return newtabButton;
 }
 
-function renderNewTab() {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "newtab";
-  const plus = document.createElement("span");
-  plus.className = "plus";
-  plus.textContent = "+";
-  const label = document.createElement("span");
-  label.textContent = COPY.actions.newTab;
-  button.append(plus, label);
-  button.addEventListener("click", () => void onNewTab());
-  return button;
+export function renderClearRow() {
+  if (!clearRow) {
+    clearRow = document.createElement("div");
+    clearRow.className = "clear-row";
+    const line = document.createElement("span");
+    line.className = "clear-line";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "clear-action";
+    button.textContent = COPY.actions.clear;
+    button.addEventListener("click", () => void onClearTemps());
+    clearRow.append(line, button);
+  }
+  return clearRow;
+}
+
+export function renderTemps() {
+  if (!tempsList) {
+    tempsList = document.createElement("div");
+    tempsList.className = "temps-list";
+  }
+  reconcile(tempsList, sortedTemps(state.temps).map((temp) => rowFor(temp, 0)));
+  return tempsList;
 }
 
 function slideFold(fold, clip, closing) {

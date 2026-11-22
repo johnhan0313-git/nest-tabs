@@ -269,3 +269,14 @@ export async function onNewTab() {
     fail(COPY.status.newTabFailed);
   }
 }
+
+export async function onClearTemps() {
+  const ids = state.temps.map((temp) => temp.tabId).filter(Number.isInteger);
+  const ok = await save((draft) => {
+    draft.temps = [];
+    return draft;
+  }, COPY.status.cleared);
+  if (ok && ids.length) {
+    await chrome.tabs.remove(ids).catch(() => {});
+  }
+}

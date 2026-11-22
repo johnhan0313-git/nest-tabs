@@ -1,7 +1,7 @@
 import { app, boot, state, ui } from "./state.js";
 import { COPY } from "../lib/copy.js";
-import { message, reconcile, sectionTitle } from "./dom.js";
-import { beginRowRender, pruneRowCache, renderTemps, rowFor } from "./rows.js";
+import { message, reconcile } from "./dom.js";
+import { beginRowRender, pruneRowCache, renderClearRow, renderNewTab, renderTemps, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
 import { renderHits, renderSearch, paintResults } from "./search.js";
 import { renderPeek } from "./peek.js";
@@ -13,7 +13,6 @@ let shell = null;
 let scroller = null;
 let status = null;
 let saved = null;
-let savedHead = null;
 let savedWrap = null;
 
 function ensureShell() {
@@ -36,7 +35,6 @@ function ensureShell() {
   status.hidden = true;
   saved = document.createElement("section");
   saved.className = "tree";
-  savedHead = sectionTitle(COPY.sections.pinned);
   savedWrap = document.createElement("div");
   bindSectionDrop(saved);
   reconcile(scroller, [status, saved]);
@@ -75,13 +73,14 @@ export function render() {
 
   beginRowRender();
   reconcile(savedWrap, state.roots.map((node) => rowFor(node, 0)));
-  if (state.roots.length) {
-    reconcile(saved, [savedHead, savedWrap]);
-  } else {
-    reconcile(saved, [savedHead]);
-  }
+  reconcile(saved, state.roots.length ? [savedWrap] : []);
 
-  reconcile(scroller, [status, saved, renderTemps()]);
+  const temps = state.temps.length;
+  const scrollerItems = [status, renderNewTab(), saved];
+  if (temps) {
+    scrollerItems.push(renderClearRow(), renderTemps());
+  }
+  reconcile(scroller, scrollerItems);
 
   const shellItems = [renderSearch(), scroller, renderHits()];
   if (ui.menuId === "__blank__") shellItems.push(renderMenu(null, "blank"));
