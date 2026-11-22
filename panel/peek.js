@@ -135,7 +135,7 @@ function paintPeekList(card, folder) {
     button.append(copy);
     button.addEventListener("click", () => {
       closePeek();
-      void openUrl(pin.url);
+      void openUrl(pin.url, pin.id);
     });
     list.append(button);
   }

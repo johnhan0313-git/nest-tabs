@@ -156,7 +156,7 @@ function collectLocal(query) {
         }
         walk(node.children || []);
       } else {
-        addPage({ title: itemName(node), url: node.url, favIconUrl: node.favIconUrl, kind: "pin" });
+        addPage({ id: node.id, title: itemName(node), url: node.url, favIconUrl: node.favIconUrl, kind: "pin" });
       }
     }
   }
@@ -266,5 +266,5 @@ async function activateResult(index) {
     return;
   }
   if (Number.isInteger(item.tabId)) await focusTab(item.tabId, item.url);
-  else if (item.url) await openUrl(item.url);
+  else if (item.url) await openUrl(item.url, item.kind === "pin" ? item.id : "");
 }

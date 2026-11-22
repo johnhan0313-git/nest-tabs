@@ -111,11 +111,12 @@ export async function onDeleteFolder(id) {
   await save((draft) => (deleteFolder(draft.roots, id) ? draft : false), "已删除");
 }
 
-export async function openUrl(url) {
+export async function openUrl(url, pinId = "") {
   try {
     if (chrome.runtime?.id) {
-      const response = await chrome.runtime.sendMessage({ type: "focus-or-open", url });
+      const response = await chrome.runtime.sendMessage({ type: "focus-or-open", url, pinId });
       if (!response?.ok) throw new Error(response?.error || "打不开");
+      await refresh();
       return;
     }
     const match = tabs.find((tab) => sameUrl(tab.url, url));
@@ -161,7 +162,7 @@ export async function closePinnedTabs(pin) {
     return;
   }
   setTabs(tabs.filter((tab) => !ids.includes(tab.id)));
-  if (ids.includes(active.id)) setActive({ id: null, url: "" });
+  if (ids.includes(active.id)) setActive({ id: null, url: "", pinId: "" });
   render();
 }
 

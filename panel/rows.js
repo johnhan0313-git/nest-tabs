@@ -50,6 +50,7 @@ function keyCtx(node) {
     draggingId: ui.dragging?.id,
     overlay: overlayKey(node.id),
     active,
+    activePinId: active.pinId,
     tabs,
     tempTtlHours: state.settings.tempTtlHours,
     now: Date.now(),
@@ -135,14 +136,14 @@ function renderFolder(folder, depth, entry) {
 
 function renderPin(pin, depth) {
   const row = rowShell(pin, "pin", depth);
-  const current = sameUrl(active.url, pin.url);
+  const current = active.pinId === pin.id;
   if (current) row.classList.add("is-active");
   if (ui.editingId === pin.id) {
     row.append(renameInput(pin, itemName(pin)));
   } else {
     const main = mainButton(pin, "pin");
     main.append(favicon(pin.url, pin.favIconUrl), nameBlock(itemName(pin)));
-    bindActivate(main, pin, () => void openUrl(pin.url));
+    bindActivate(main, pin, () => void openUrl(pin.url, pin.id));
     const live = tabs.some((tab) => sameUrl(tab.url, pin.url));
     row.append(main, hoverAction(
       live ? "关闭并保持固定" : "移除",
