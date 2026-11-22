@@ -1,4 +1,5 @@
 import { locate, moveNode } from "../lib/model.js";
+import { dropModeFor, isSelfDrop } from "../lib/dnd.js";
 import { fail, state, ui } from "./state.js";
 import { render } from "./render.js";
 import { pinAt, save } from "./actions.js";
@@ -15,29 +16,15 @@ export function clearDragMarks() {
 
 export function onDragOver(event, row) {
   if (!ui.dragging || ui.dragging.id === row.dataset.id) return;
-  const kind = row.dataset.kind;
-  if (kind === "temp") return;
   const rect = row.getBoundingClientRect();
   const ratio = rect.height ? (event.clientY - rect.top) / rect.height : 0.5;
-  let mode = "into";
-  if (ui.dragging.kind !== "temp") {
-    mode = ratio > 0.5 ? "after" : "before";
-    if (kind === "folder" && ratio > 0.28 && ratio < 0.72) mode = "into";
-    if (mode === "into" && isSelfDrop(ui.dragging.id, row.dataset.id)) return;
-  } else if (kind !== "folder" && kind !== "pin") {
-    return;
-  }
+  const mode = dropModeFor(ratio, row.dataset.kind, ui.dragging.kind);
+  if (!mode) return;
+  if (mode === "into" && isSelfDrop(state.roots, ui.dragging.id, row.dataset.id)) return;
   event.preventDefault();
   row.classList.remove("drop-into", "drop-before", "drop-after");
-  row.classList.add(ui.dragging.kind === "temp" ? "drop-into" : `drop-${mode}`);
-  row.dataset.dropMode = ui.dragging.kind === "temp" ? "into" : mode;
-}
-
-function isSelfDrop(nodeId, targetId) {
-  if (nodeId === targetId) return true;
-  const loc = locate(state.roots, nodeId);
-  if (!loc || loc.node.type !== "folder") return false;
-  return Boolean(locate(loc.node.children, targetId));
+  row.classList.add(`drop-${mode}`);
+  row.dataset.dropMode = mode;
 }
 
 export async function onDrop(event, targetId) {

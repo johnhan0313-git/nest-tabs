@@ -4,8 +4,10 @@ import {
   itemName,
   locate,
   remainingMs,
+  sameUrl,
   sortedTemps,
 } from "../lib/model.js";
+import { rowKey, rowKind } from "../lib/rowKey.js";
 import { active, busy, refresh, state, tabs, ui } from "./state.js";
 import { render } from "./render.js";
 import { favicon, folderIcon, hint, hoverAction, nameBlock, reconcile } from "./dom.js";
@@ -13,7 +15,6 @@ import { appendOverlays } from "./menu.js";
 import { bindFolderPeek, closePeek } from "./peek.js";
 import { clearDragMarks, onDragOver, onDrop } from "./dnd.js";
 import { finishRename, focusTab, onCloseTemp, onNewTab, openUrl, save, closePinnedTabs } from "./actions.js";
-import { sameUrl } from "./util.js";
 
 const foldMotions = new WeakMap();
 let foldingCount = 0;
@@ -42,30 +43,21 @@ function overlayKey(id) {
   return "";
 }
 
-/**
- * key 覆盖「构建时读取过的全部输入」：复用的前提是新旧对象在这些值上
- * 完全一致，闭包里捕获的旧对象与当前状态行为等价；写入类操作都按 id
- * 落库，不依赖对象身份。
- */
-function rowKey(node, depth) {
-  const shared = `${node.id}:${depth}:${ui.editingId === node.id ? 1 : 0}:${ui.dragging?.id === node.id ? 1 : 0}${overlayKey(node.id)}`;
-  if (node.type === "folder") {
-    return `f:${shared}:${node.collapsed ? 1 : 0}:${node.name}`;
-  }
-  if (node.type === "pin") {
-    const current = sameUrl(active.url, node.url) ? 1 : 0;
-    const live = tabs.some((tab) => sameUrl(tab.url, node.url)) ? 1 : 0;
-    return `p:${shared}:${current}:${live}:${itemName(node)}:${node.url}:${node.favIconUrl || ""}`;
-  }
-  const current = node.tabId === active.id ? 1 : 0;
-  const remain = remainingMs(node.openedAt, Date.now(), state.settings.tempTtlHours);
-  const left = remain == null ? "" : formatRemaining(remain);
-  // tabId 会因崩溃重绑定而变（url 不变），必须进 key
-  return `t:${shared}:${current}:${node.tabId}:${itemName(node)}:${node.url}:${node.favIconUrl || ""}:${left}`;
+/** 从 UI 状态组装 rowKey 的纯函数入参 */
+function keyCtx(node) {
+  return {
+    editingId: ui.editingId,
+    draggingId: ui.dragging?.id,
+    overlay: overlayKey(node.id),
+    active,
+    tabs,
+    tempTtlHours: state.settings.tempTtlHours,
+    now: Date.now(),
+  };
 }
 
 export function rowFor(node, depth) {
-  const key = rowKey(node, depth);
+  const key = rowKey(node, depth, keyCtx(node));
   const hit = rowCache.get(node.id);
   if (hit && hit.key === key) {
     hit.gen = rowGen;
@@ -73,10 +65,10 @@ export function rowFor(node, depth) {
     return hit.el;
   }
   const entry = { key, gen: rowGen, wrap: null };
-  // temp 对象没有 type 字段（靠存在于 state.temps 隐式表意），故先判 pin，其余即 temp
-  entry.el = node.type === "folder"
+  const kind = rowKind(node);
+  entry.el = kind === "folder"
     ? renderFolder(node, depth, entry)
-    : node.type === "pin"
+    : kind === "pin"
       ? renderPin(node, depth)
       : renderTemp(node);
   rowCache.set(node.id, entry);

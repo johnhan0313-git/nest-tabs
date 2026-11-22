@@ -9,10 +9,10 @@ import {
   pinTemp,
   removePin,
   renameItem,
+  sameUrl,
 } from "../lib/model.js";
 import { active, app, commit, fail, flash, refresh, setActive, setTabs, state, tabs, ui } from "./state.js";
 import { render } from "./render.js";
-import { sameUrl } from "./util.js";
 
 export async function save(mutator, success, options = {}) {
   try {

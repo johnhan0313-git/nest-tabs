@@ -33,13 +33,18 @@ panel/peek.js          折叠文件夹的 hover 预览卡片
 panel/search.js        搜索框、结果列表（本地树 + 历史）
 panel/actions.js       全部写操作：保存、打开/聚焦标签、复制、导入标签组
 panel/dnd.js           拖放排序与「临时 → 固定」
-panel/util.js          纯工具函数
 lib/model.js           纯函数领域层：状态结构、树操作、URL 归一化、标签组导入
 lib/store.js           storage 读写（Web Locks 互斥 + rev 版本号 + 内容无变化不落库）
+lib/rowKey.js          行级键控渲染的 key 计算与行路由（纯函数，可单测）
+lib/dnd.js             拖放落点判定与自嵌套检查（纯函数，可单测）
 lib/model.test.js      领域层单元测试（node:test）
+lib/rowKey.test.js     键控渲染 key / 行路由单元测试
+lib/dnd.test.js        拖放落点判定单元测试
 lib/previewData.js     预览页 mock 数据（用真实模型函数构建，结构自动同步）
+lib/previewChrome.js   预览页 chrome API mock（storage/tabs/history…，供预览页挂载）
 lib/previewData.test.js 预览数据结构契约测试
 preview.html           UI 预览页（mock 数据，无需加载扩展）
+scripts/pack.sh        打包脚本：只挑运行时文件输出 dist/nest-tabs-<版本>.zip
 icons/                 16 / 32 / 48 / 128 图标
 ```
 
@@ -78,11 +83,14 @@ state = {
 
 ```sh
 npm test          # 等价于 node --test lib/*.test.js
+npm run pack      # 打包扩展 zip → dist/nest-tabs-<版本>.zip（需系统 zip 命令）
 ```
 
-测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化、TTL 分区、标签重绑定、标签组导入、
-图标取用顺序、损坏数据修剪）、`lib/store.js` 的写入策略与 `lib/previewData.js` 的结构契约，
-当前 30 个用例。
+测试覆盖 `lib/model.js` 的领域逻辑（树操作、URL 归一化 / 相等性、TTL 分区、标签重绑定、
+标签组导入、图标取用顺序、损坏数据修剪）、`lib/rowKey.js` 的键控渲染 key（覆盖
+编辑 / 拖拽 / 浮层坐标 / 折叠 / 当前页 / 存活 / 倒计时等全部输入，含 temp 行路由回归）、
+`lib/dnd.js` 的拖放落点判定、`lib/store.js` 的写入策略与 `lib/previewData.js` 的结构契约，
+当前 42 个用例。
 
 ## 架构说明
 
@@ -107,7 +115,10 @@ npm test          # 等价于 node --test lib/*.test.js
   剩余时间文本等），只有 key 变化的行才重建 DOM。收益：未变的行保留原元素与事件
   监听，焦点、滚动、IME 合成天然不丢，favicon 不随渲染重复请求；
   拖拽标记（`dragging`/`drop-*`）改由 `clearDragMarks()` 显式清理，
-  搜索框聚焦时不回写 value（保护输入法）。注意：temp 对象没有 `type` 字段
-  （靠存在于 `state.temps` 隐式表意），行路由按 `folder → pin → 其余即 temp` 判断。
+  搜索框聚焦时不回写 value（保护输入法）。key 计算与行路由下沉在
+  `lib/rowKey.js`（纯函数，`panel/rows.js` 只组装 UI 上下文），
+  注意 temp 对象没有 `type` 字段（靠存在于 `state.temps` 隐式表意），
+  行路由按 `folder → pin → 其余即 temp` 判断。
 - **lib/**：不依赖 Chrome API 的纯函数，是唯一可单测的层；UI 与 SW 只做编排。
-  `normalizeLoaded` 会在加载时修剪损坏数据（未知节点、非法字段），保证渲染层永远拿到合法结构。
+  `normalizeLoaded` 会在加载时修剪损坏数据（未知节点、非法字段），保证渲染层永远拿到合法结构；
+  键控渲染的 key（`rowKey`）与拖放落点判定（`dropModeFor`/`isSelfDrop`）也在此层。
