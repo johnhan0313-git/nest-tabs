@@ -1,12 +1,11 @@
 import { app, boot, state, ui } from "./state.js";
 import { COPY } from "../lib/copy.js";
-import { hint, importIcon, message, reconcile, sectionIconAction, sectionTitle } from "./dom.js";
+import { message, reconcile, sectionTitle } from "./dom.js";
 import { beginRowRender, pruneRowCache, renderTemps, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
 import { renderHits, renderSearch, paintResults } from "./search.js";
 import { renderPeek } from "./peek.js";
 import { bindSectionDrop } from "./dnd.js";
-import { onImportTabGroups } from "./actions.js";
 
 // 顶层结构整块持久化（shell/scroller/status/已固定区），每次渲染只做
 // 槽位对齐 + 变化行重建：未变的行保留原元素，焦点与滚动天然不丢。
@@ -16,7 +15,6 @@ let status = null;
 let saved = null;
 let savedHead = null;
 let savedWrap = null;
-let savedHint = null;
 
 function ensureShell() {
   if (shell) return;
@@ -40,9 +38,7 @@ function ensureShell() {
   saved.className = "tree";
   saved.setAttribute("aria-label", COPY.sections.pinned);
   savedHead = sectionTitle(COPY.sections.pinned);
-  savedHead.append(sectionIconAction(importIcon(), COPY.actions.importTabGroups, () => void onImportTabGroups()));
   savedWrap = document.createElement("div");
-  savedHint = hint("");
   bindSectionDrop(saved);
   reconcile(scroller, [status, saved]);
   shell.append(renderSearch(), scroller, renderHits());
@@ -83,10 +79,7 @@ export function render() {
   if (state.roots.length) {
     reconcile(saved, [savedHead, savedWrap]);
   } else {
-    savedHint.textContent = state.temps.length
-      ? COPY.hints.pinnedEmptyWithTemps
-      : COPY.hints.pinnedEmpty;
-    reconcile(saved, [savedHead, savedHint]);
+    reconcile(saved, [savedHead]);
   }
 
   reconcile(scroller, [status, saved, renderTemps()]);

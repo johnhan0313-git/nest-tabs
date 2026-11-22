@@ -1,7 +1,7 @@
 import { COPY } from "../lib/copy.js";
 import { formatAgo, hostOf, itemName, locate, normalizeUrl, toNavigableUrl } from "../lib/model.js";
 import { app, refresh, state, tabs, ui } from "./state.js";
-import { favicon, folderIcon, searchIcon } from "./dom.js";
+import { favicon, folderIcon, searchIcon, settingsIcon } from "./dom.js";
 import { focusTab, openUrl, save } from "./actions.js";
 
 // 搜索头整块持久化：保住输入焦点/光标与 IME 合成状态，不再整块重建
@@ -17,6 +17,8 @@ export function renderSearch() {
   }
   const header = document.createElement("header");
   header.className = "top";
+  const bar = document.createElement("div");
+  bar.className = "top-bar";
   const wrap = document.createElement("label");
   wrap.className = "find-wrap";
   wrap.append(searchIcon());
@@ -50,9 +52,23 @@ export function renderSearch() {
     }, 120);
   });
   wrap.append(input);
-  header.append(wrap);
+  bar.append(wrap, renderSettingsButton());
+  header.append(bar);
   topEl = header;
   return header;
+}
+
+function renderSettingsButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "settings-btn";
+  button.title = COPY.actions.settings;
+  button.setAttribute("aria-label", COPY.actions.settings);
+  button.append(settingsIcon());
+  button.addEventListener("click", () => {
+    if (chrome.runtime?.openOptionsPage) chrome.runtime.openOptionsPage();
+  });
+  return button;
 }
 
 export function renderHits() {

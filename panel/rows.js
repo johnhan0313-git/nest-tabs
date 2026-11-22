@@ -1,6 +1,5 @@
 import { COPY } from "../lib/copy.js";
 import {
-  TTL_OPTIONS,
   formatRemaining,
   itemName,
   locate,
@@ -186,11 +185,9 @@ function renderTemp(temp) {
   return row;
 }
 
-// 临时区整节持久化：head / 提示 / 新标签按钮只建一次，行按键复用。
+// 临时区整节持久化：head / 新标签按钮只建一次，行按键复用。
 let tempsSection = null;
 let tempsHead = null;
-let ttlSelect = null;
-let tempsHint = null;
 let newtabButton = null;
 
 export function renderTemps() {
@@ -202,43 +199,16 @@ export function renderTemps() {
     tempsHead.className = "section-head";
     const title = document.createElement("h2");
     title.textContent = COPY.sections.temporary;
-    ttlSelect = renderTtl();
-    tempsHead.append(title, ttlSelect);
-    tempsHint = hint(COPY.hints.tempsEmpty);
+    tempsHead.append(title);
     newtabButton = renderNewTab();
   }
-  const ttl = state.settings.tempTtlHours;
-  if (document.activeElement !== ttlSelect && ttlSelect.value !== String(ttl)) ttlSelect.value = String(ttl);
 
   const temps = sortedTemps(state.temps);
   const items = [tempsHead];
   for (const temp of temps) items.push(rowFor(temp, 0));
-  if (!temps.length) items.push(tempsHint);
   items.push(newtabButton);
   reconcile(tempsSection, items);
   return tempsSection;
-}
-
-function renderTtl() {
-  const select = document.createElement("select");
-  select.className = "ttl";
-  select.setAttribute("aria-label", COPY.ttl.ariaLabel);
-  for (const option of TTL_OPTIONS) {
-    const node = document.createElement("option");
-    node.value = String(option.hours);
-    node.textContent = option.label;
-    node.selected = option.hours === state.settings.tempTtlHours;
-    select.append(node);
-  }
-  select.addEventListener("change", () => {
-    const hours = Number(select.value);
-    const label = TTL_OPTIONS.find((item) => item.hours === hours)?.label || "24 hours";
-    void save((draft) => {
-      draft.settings.tempTtlHours = hours;
-      return draft;
-    }, hours ? COPY.ttl.setTo(label) : COPY.ttl.disabled);
-  });
-  return select;
 }
 
 function renderNewTab() {

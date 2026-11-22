@@ -99,6 +99,12 @@ button {
   background: var(--bg);
 }
 
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .find-wrap {
   display: flex;
   align-items: center;
@@ -287,19 +293,19 @@ button {
 
 .section-action:hover { color: var(--text); }
 
-.section-icon-action {
+.settings-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin: -4px -2px -4px 0;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 8px;
   color: var(--muted);
 }
 
-.section-icon-action:hover { background: var(--hover); color: var(--text); }
-.section-icon-action svg { width: 14px; height: 14px; }
+.settings-btn:hover { background: var(--hover); color: var(--text); }
+.settings-btn svg { width: 16px; height: 16px; }
 
 .icon-btn {
   width: 22px;
@@ -311,30 +317,6 @@ button {
 }
 
 .icon-btn:hover { background: var(--hover); color: var(--text); }
-
-.ttl {
-  width: auto;
-  max-width: 46%;
-  min-width: 0;
-  padding-right: 12px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ttl:hover { color: var(--text); }
-
-.empty {
-  margin: 0;
-  padding: 2px 14px 8px;
-  color: var(--muted);
-  font-size: 11px;
-  opacity: 0.8;
-}
 
 .tree.drop-into,
 .row.drop-into { background: var(--active); }

@@ -24,13 +24,6 @@ export function message(text) {
   return p;
 }
 
-export function hint(text) {
-  const p = document.createElement("p");
-  p.className = "empty";
-  p.textContent = text;
-  return p;
-}
-
 export function sectionTitle(text) {
   const head = document.createElement("div");
   head.className = "section-head";
@@ -49,19 +42,8 @@ export function sectionAction(text, onClick) {
   return button;
 }
 
-export function sectionIconAction(icon, title, onClick) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "section-icon-action";
-  button.title = title;
-  button.setAttribute("aria-label", title);
-  button.append(icon);
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-export function importIcon() {
-  return svgPath("M8 3v8M5 8l3 3 3-3M3 13h10", false);
+export function settingsIcon() {
+  return svgPath("M8 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12.5 8.5c.2-.6.5-1.1.9-1.6l.7-.7-1.4-1.4-.7.7c-.5.4-1 .7-1.6.9h-.8c-.6-.2-1.1-.5-1.6-.9l-.7-.7-1.4 1.4.7.7c.4.5.7 1 .9 1.6v.8c-.2.6-.5 1.1-.9 1.6l-.7.7 1.4 1.4.7-.7c.5-.4 1-.7 1.6-.9h.8c.6.2 1.1.5 1.6.9l.7.7 1.4-1.4-.7-.7c-.4-.5-.7-1-.9-1.6v-.8z", false);
 }
 
 export function nameBlock(name) {

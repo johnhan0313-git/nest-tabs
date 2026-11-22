@@ -11,6 +11,7 @@ rm -f "$out"
 
 # shellcheck disable=SC2046
 zip -q "$out" manifest.json background.js sidepanel.html sidepanel.css sidepanel.js \
+  options.html options.css options.js \
   $(find panel lib icons -type f ! -name "*.test.js" ! -name "preview*" ! -name ".DS_Store")
 
 echo "$out ($(unzip -l "$out" | tail -1 | awk '{print $2}') files)"
