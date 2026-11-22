@@ -1,16 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "嵌套标签",
+  "name": "Nest Tabs",
   "version": "1.2.12",
   "minimum_chrome_version": "116",
-  "description": "用可嵌套的文件夹收纳标签，自定义名称。没放进文件夹的标签会在设定时间后关闭。",
+  "description": "Organize tabs into nestable folders with custom names. Tabs not in a folder auto-close after a set time.",
   "permissions": ["sidePanel", "tabs", "tabGroups", "storage", "alarms", "history", "favicon", "webNavigation"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
-    "default_title": "嵌套标签",
+    "default_title": "Nest Tabs",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

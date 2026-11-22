@@ -1,3 +1,4 @@
+import { COPY } from "../lib/copy.js";
 import {
   TTL_OPTIONS,
   formatRemaining,
@@ -146,7 +147,7 @@ function renderPin(pin, depth) {
     bindActivate(main, pin, () => void openUrl(pin.url, pin.id));
     const live = tabs.some((tab) => sameUrl(tab.url, pin.url));
     row.append(main, hoverAction(
-      live ? "关闭并保持固定" : "移除",
+      live ? COPY.tooltips.closeKeepPin : COPY.tooltips.close,
       live ? "minus" : "x",
       (event) => {
         if (live) {
@@ -176,7 +177,9 @@ function renderTemp(temp) {
     main.append(favicon(temp.url, temp.favIconUrl), nameBlock(itemName(temp)));
     bindActivate(main, temp, () => void focusTab(temp.tabId, temp.url));
     const remain = remainingMs(temp.openedAt, Date.now(), state.settings.tempTtlHours);
-    const closeTitle = remain == null ? "关闭" : `关闭（${formatRemaining(remain)}）`;
+    const closeTitle = remain == null
+      ? COPY.tooltips.close
+      : COPY.tooltips.closeTemp(formatRemaining(remain));
     row.append(main, hoverAction(closeTitle, "x", () => void onCloseTemp(temp.id)));
   }
   appendOverlays(row, temp.id, "temp");
@@ -194,14 +197,14 @@ export function renderTemps() {
   if (!tempsSection) {
     tempsSection = document.createElement("section");
     tempsSection.className = "temps";
-    tempsSection.setAttribute("aria-label", "临时");
+    tempsSection.setAttribute("aria-label", COPY.sections.temporary);
     tempsHead = document.createElement("div");
     tempsHead.className = "section-head";
     const title = document.createElement("h2");
-    title.textContent = "临时";
+    title.textContent = COPY.sections.temporary;
     ttlSelect = renderTtl();
     tempsHead.append(title, ttlSelect);
-    tempsHint = hint("新网页会出现在这里。");
+    tempsHint = hint(COPY.hints.tempsEmpty);
     newtabButton = renderNewTab();
   }
   const ttl = state.settings.tempTtlHours;
@@ -219,7 +222,7 @@ export function renderTemps() {
 function renderTtl() {
   const select = document.createElement("select");
   select.className = "ttl";
-  select.setAttribute("aria-label", "临时标签关闭时间");
+  select.setAttribute("aria-label", COPY.ttl.ariaLabel);
   for (const option of TTL_OPTIONS) {
     const node = document.createElement("option");
     node.value = String(option.hours);
@@ -229,11 +232,11 @@ function renderTtl() {
   }
   select.addEventListener("change", () => {
     const hours = Number(select.value);
-    const label = TTL_OPTIONS.find((item) => item.hours === hours)?.label || "24 小时";
+    const label = TTL_OPTIONS.find((item) => item.hours === hours)?.label || "24 hours";
     void save((draft) => {
       draft.settings.tempTtlHours = hours;
       return draft;
-    }, hours ? `已设为 ${label}` : "临时标签不再自动关闭");
+    }, hours ? COPY.ttl.setTo(label) : COPY.ttl.disabled);
   });
   return select;
 }
@@ -246,7 +249,7 @@ function renderNewTab() {
   plus.className = "plus";
   plus.textContent = "+";
   const label = document.createElement("span");
-  label.textContent = "新标签";
+  label.textContent = COPY.actions.newTab;
   button.append(plus, label);
   button.addEventListener("click", () => void onNewTab());
   return button;
@@ -388,7 +391,7 @@ function renameInput(item, name) {
   input.className = "rename";
   input.value = name;
   input.dataset.original = name;
-  input.setAttribute("aria-label", "名称");
+  input.setAttribute("aria-label", COPY.rename.ariaLabel);
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();

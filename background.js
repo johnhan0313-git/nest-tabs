@@ -1,3 +1,4 @@
+import { COPY } from "./lib/copy.js";
 import {
   collectPins,
   createTemp,
@@ -39,7 +40,7 @@ async function restoreSwMem() {
       if (expiresAt > now) pendingUrls.set(url, expiresAt);
     }
   } catch (error) {
-    console.error("[嵌套标签] 恢复会话态失败", error);
+    console.error("[nest-tabs] 恢复会话态失败", error);
   }
 }
 
@@ -63,7 +64,7 @@ function swMemSnapshot() {
 function writeSwMem() {
   return chrome.storage.session
     .set({ [SW_MEM_KEY]: swMemSnapshot() })
-    .catch((error) => console.error("[嵌套标签] 保存会话态失败", error));
+    .catch((error) => console.error("[nest-tabs] 保存会话态失败", error));
 }
 
 function persistSwMem() {
@@ -164,7 +165,7 @@ function guard(fn) {
     return Promise.resolve()
       .then(() => swMemReady)
       .then(() => fn(...args))
-      .catch((error) => console.error("[嵌套标签]", error));
+      .catch((error) => console.error("[nest-tabs]", error));
   };
 }
 
@@ -317,7 +318,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "focus-or-open") return false;
   focusOrOpen(message.url, message.pinId)
     .then(() => sendResponse({ ok: true }))
-    .catch((error) => sendResponse({ ok: false, error: error?.message || "打不开这个网址" }));
+    .catch((error) => sendResponse({ ok: false, error: error?.message || COPY.status.openFailed }));
   return true;
 });
 
@@ -349,12 +350,12 @@ chrome.webNavigation.onCreatedNavigationTarget.addListener(guard(async (details)
 
   await chrome.tabs.remove(newTabId).catch(() => {});
   await chrome.tabs.update(sourceId, { url, active: true }).catch((error) => {
-    console.error("[嵌套标签] 把弹窗拉回原标签失败", error);
+    console.error("[nest-tabs] 把弹窗拉回原标签失败", error);
   });
 }));
 
 async function focusOrOpen(url, pinId = "") {
-  if (!url) throw new Error("没有网址");
+  if (!url) throw new Error(COPY.status.noUrlYet);
   await swMemReady;
   const norm = normalizeUrl(url);
   const tabs = await chrome.tabs.query({});
@@ -395,4 +396,4 @@ async function focusOrOpen(url, pinId = "") {
   }
 }
 
-void init().catch((error) => console.error("[嵌套标签]", error));
+void init().catch((error) => console.error("[nest-tabs]", error));

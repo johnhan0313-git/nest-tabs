@@ -1,5 +1,6 @@
 import { loadState, updateState } from "../lib/store.js";
 import { resolvePinId } from "../lib/model.js";
+import { COPY } from "../lib/copy.js";
 import { render } from "./render.js";
 
 export const app = document.querySelector("#app");
@@ -63,7 +64,7 @@ export async function boot() {
     await refresh();
   } catch (error) {
     ui.loading = false;
-    ui.fatal = "读不到已保存的标签。";
+    ui.fatal = COPY.app.loadError;
     console.error(error);
     render();
   }

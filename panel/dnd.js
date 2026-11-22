@@ -1,3 +1,4 @@
+import { COPY } from "../lib/copy.js";
 import { locate, moveNode } from "../lib/model.js";
 import { dropModeFor, isSelfDrop } from "../lib/dnd.js";
 import { fail, state, ui } from "./state.js";
@@ -58,7 +59,7 @@ export async function onDrop(event, targetId) {
     const index = target.index + (mode === "after" ? 1 : 0);
     return moveNode(draft.roots, drag.id, target.parentId, index) ? draft : false;
   });
-  if (!ok && !ui.error) fail("不能放到这里。");
+  if (!ok && !ui.error) fail(COPY.status.cannotDropHere);
 }
 
 export function bindSectionDrop(section) {

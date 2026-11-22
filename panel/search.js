@@ -1,3 +1,4 @@
+import { COPY } from "../lib/copy.js";
 import { formatAgo, hostOf, itemName, locate, normalizeUrl, toNavigableUrl } from "../lib/model.js";
 import { app, refresh, state, tabs, ui } from "./state.js";
 import { favicon, folderIcon, searchIcon } from "./dom.js";
@@ -22,8 +23,8 @@ export function renderSearch() {
   const input = document.createElement("input");
   input.className = "find";
   input.type = "text";
-  input.placeholder = "搜索或输入网址";
-  input.setAttribute("aria-label", "搜索或输入网址");
+  input.placeholder = COPY.search.placeholder;
+  input.setAttribute("aria-label", COPY.search.ariaLabel);
   input.setAttribute("aria-controls", "hits");
   input.setAttribute("aria-autocomplete", "list");
   input.value = ui.query;
@@ -61,7 +62,7 @@ export function renderHits() {
   box.id = "hits";
   box.hidden = true;
   box.setAttribute("role", "listbox");
-  box.setAttribute("aria-label", "搜索结果");
+  box.setAttribute("aria-label", COPY.search.resultsLabel);
   hitsEl = box;
   return box;
 }
@@ -124,7 +125,7 @@ function collectLocal(query) {
   const seen = new Set();
   const url = toNavigableUrl(query);
   if (url) {
-    items.push({ key: `go:${url}`, title: query.trim(), subtitle: "打开网址", url, kind: "go" });
+    items.push({ key: `go:${url}`, title: query.trim(), subtitle: COPY.search.openUrl, url, kind: "go" });
     seen.add(normalizeUrl(url));
   }
   walk(state?.roots || []);
@@ -152,7 +153,7 @@ function collectLocal(query) {
     for (const node of nodes) {
       if (node.type === "folder") {
         if ((node.name || "").toLowerCase().includes(q)) {
-          items.push({ key: node.id, title: node.name, subtitle: "文件夹", kind: "folder", id: node.id });
+          items.push({ key: node.id, title: node.name, subtitle: COPY.search.folder, kind: "folder", id: node.id });
         }
         walk(node.children || []);
       } else {
@@ -213,7 +214,7 @@ export function paintResults() {
   if (!ui.results.length) {
     const empty = document.createElement("p");
     empty.className = "hits-empty";
-    empty.textContent = "没有匹配的网页";
+    empty.textContent = COPY.search.noResults;
     box.append(empty);
     return;
   }

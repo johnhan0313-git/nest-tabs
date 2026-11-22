@@ -1,3 +1,4 @@
+import { COPY } from "../lib/copy.js";
 import {
   adoptOpenTabs,
   collectTabGroups,
@@ -26,7 +27,7 @@ export async function save(mutator, success, options = {}) {
     return true;
   } catch (error) {
     console.error(error);
-    fail("没保存上。再点一次。");
+    fail(COPY.status.saveFailed);
     return false;
   }
 }
@@ -41,11 +42,11 @@ export async function finishRename(id, value, previous) {
   }
   try {
     const ok = await commit((draft) => (renameItem(draft, id, value) ? draft : false));
-    if (!ok && value.trim()) fail("没保存上。再点一次。");
+    if (!ok && value.trim()) fail(COPY.status.saveFailed);
     else render();
   } catch (error) {
     console.error(error);
-    fail("没保存上。再点一次。");
+    fail(COPY.status.saveFailed);
   }
   if (ui.dirty) await refresh();
 }
@@ -53,7 +54,7 @@ export async function finishRename(id, value, previous) {
 export async function onCreateFolder(parentId) {
   let createdId = "";
   const ok = await save((draft) => {
-    const folder = createFolder("文件夹");
+    const folder = createFolder(COPY.fallback.folderName);
     createdId = folder.id;
     if (!parentId) {
       draft.roots.push(folder);
@@ -74,7 +75,7 @@ export async function onCreateFolder(parentId) {
 export async function pinAt(tempId, parentId, index, folderName) {
   const temp = state.temps.find((item) => item.id === tempId);
   if (!temp?.url) {
-    fail("这个页面还没有网址，先等它打开。");
+    fail(COPY.status.noUrlYet);
     return false;
   }
   return save((draft) => {
@@ -84,7 +85,7 @@ export async function pinAt(tempId, parentId, index, folderName) {
     }
     const pin = pinTemp(draft, tempId, parentId, index);
     return pin ? draft : false;
-  }, folderName ? `已固定到「${folderName}」` : "已固定");
+  }, folderName ? COPY.status.pinSavedTo(folderName) : COPY.status.pinned);
 }
 
 export async function onCloseTemp(id) {
@@ -94,7 +95,7 @@ export async function onCloseTemp(id) {
   const ok = await save((draft) => {
     draft.temps = draft.temps.filter((item) => item.id !== id);
     return draft;
-  }, "已关闭");
+  }, COPY.status.closed);
   if (ok && Number.isInteger(temp.tabId)) await chrome.tabs.remove(temp.tabId).catch(() => {});
 }
 
@@ -104,18 +105,18 @@ export async function onRemovePin(id) {
     if (!removed) return false;
     adoptOpenTabs(draft, removed.url, tabs, Date.now());
     return draft;
-  }, "已移除");
+  }, COPY.status.removed);
 }
 
 export async function onDeleteFolder(id) {
-  await save((draft) => (deleteFolder(draft.roots, id) ? draft : false), "已删除");
+  await save((draft) => (deleteFolder(draft.roots, id) ? draft : false), COPY.status.deleted);
 }
 
 export async function openUrl(url, pinId = "") {
   try {
     if (chrome.runtime?.id) {
       const response = await chrome.runtime.sendMessage({ type: "focus-or-open", url, pinId });
-      if (!response?.ok) throw new Error(response?.error || "打不开");
+      if (!response?.ok) throw new Error(response?.error || COPY.status.openFailed);
       await refresh();
       return;
     }
@@ -128,7 +129,7 @@ export async function openUrl(url, pinId = "") {
     }
   } catch (error) {
     console.error(error);
-    fail("打不开这个网址。");
+    fail(COPY.status.openFailed);
   }
 }
 
@@ -143,7 +144,7 @@ export async function focusTab(tabId, url) {
     await chrome.windows.update(match.windowId, { focused: true });
   } catch (error) {
     console.error(error);
-    fail("这个标签已经关掉了。");
+    fail(COPY.status.tabAlreadyClosed);
     await refresh();
   }
 }
@@ -158,7 +159,7 @@ export async function closePinnedTabs(pin) {
     await chrome.tabs.remove(ids);
   } catch (error) {
     console.error(error);
-    fail("这个标签已经关掉了。");
+    fail(COPY.status.tabAlreadyClosed);
     return;
   }
   setTabs(tabs.filter((tab) => !ids.includes(tab.id)));
@@ -178,15 +179,15 @@ export async function onCopyLink(id, kind) {
   const page = pageOf(id, kind);
   ui.menuId = null;
   if (!page?.url) {
-    fail("这个页面还没有网址。");
+    fail(COPY.status.noUrlYet);
     return;
   }
   try {
     await writeClipboard(page.url);
-    flash("已复制链接");
+    flash(COPY.status.copiedLink);
   } catch (error) {
     console.error(error);
-    fail("没复制上。再点一次。");
+    fail(COPY.status.copyFailed);
   }
 }
 
@@ -213,7 +214,7 @@ export async function onDuplicate(id, kind) {
   ui.menuId = null;
   render();
   if (!page?.url) {
-    fail("这个页面还没有网址。");
+    fail(COPY.status.noUrlYet);
     return;
   }
   const open = Number.isInteger(page.tabId)
@@ -224,7 +225,7 @@ export async function onDuplicate(id, kind) {
     else await chrome.tabs.create({ url: page.url, active: true });
   } catch (error) {
     console.error(error);
-    fail("没复制出新标签。");
+    fail(COPY.status.duplicateFailed);
   }
 }
 
@@ -238,7 +239,7 @@ export async function onImportTabGroups() {
     ]);
     const collected = collectTabGroups(groups, openTabs);
     if (!collected.length) {
-      flash("没有可导入的标签组");
+      flash(COPY.status.noTabGroups);
       return;
     }
     let result = null;
@@ -254,7 +255,7 @@ export async function onImportTabGroups() {
     }
   } catch (error) {
     console.error(error);
-    fail("读不到标签组。再点一次。");
+    fail(COPY.status.readTabGroupsFailed);
   } finally {
     ui.importing = false;
   }
@@ -265,6 +266,6 @@ export async function onNewTab() {
     await chrome.tabs.create({ active: true });
   } catch (error) {
     console.error(error);
-    fail("新标签页没打开。");
+    fail(COPY.status.newTabFailed);
   }
 }

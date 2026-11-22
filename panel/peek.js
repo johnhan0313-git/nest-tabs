@@ -1,3 +1,4 @@
+import { COPY } from "../lib/copy.js";
 import { collectPins, formatAgo, itemName, locate } from "../lib/model.js";
 import { app, state, ui } from "./state.js";
 import { favicon, searchIcon } from "./dom.js";
@@ -61,8 +62,8 @@ export function renderPeek() {
   const input = document.createElement("input");
   input.className = "peek-find";
   input.type = "text";
-  input.placeholder = `搜索${folder.name}`;
-  input.setAttribute("aria-label", `搜索${folder.name}`);
+  input.placeholder = COPY.peek.placeholder(folder.name);
+  input.setAttribute("aria-label", COPY.peek.ariaLabel(folder.name));
   input.value = ui.peekQuery;
   input.spellcheck = false;
   input.addEventListener("input", () => {
@@ -109,7 +110,7 @@ function paintPeekList(card, folder) {
   if (!pages.length) {
     const empty = document.createElement("p");
     empty.className = "hits-empty";
-    empty.textContent = collectPins(folder.children).length ? "没有匹配的网页" : "里面还没有网页";
+    empty.textContent = collectPins(folder.children).length ? COPY.peek.noMatches : COPY.peek.empty;
     list.append(empty);
     return;
   }

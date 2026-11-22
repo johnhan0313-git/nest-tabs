@@ -1,4 +1,5 @@
 import { app, boot, state, ui } from "./state.js";
+import { COPY } from "../lib/copy.js";
 import { hint, importIcon, message, reconcile, sectionIconAction, sectionTitle } from "./dom.js";
 import { beginRowRender, pruneRowCache, renderTemps, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
@@ -37,9 +38,9 @@ function ensureShell() {
   status.hidden = true;
   saved = document.createElement("section");
   saved.className = "tree";
-  saved.setAttribute("aria-label", "已固定");
-  savedHead = sectionTitle("已固定");
-  savedHead.append(sectionIconAction(importIcon(), "导入标签组", () => void onImportTabGroups()));
+  saved.setAttribute("aria-label", COPY.sections.pinned);
+  savedHead = sectionTitle(COPY.sections.pinned);
+  savedHead.append(sectionIconAction(importIcon(), COPY.actions.importTabGroups, () => void onImportTabGroups()));
   savedWrap = document.createElement("div");
   savedHint = hint("");
   bindSectionDrop(saved);
@@ -54,7 +55,7 @@ export function render() {
   const peeking = document.activeElement?.classList?.contains("peek-find");
   const peekCaret = peeking ? document.activeElement.selectionStart : null;
   if (ui.loading) {
-    app.replaceChildren(message("正在读取"));
+    app.replaceChildren(message(COPY.app.loading));
     return;
   }
   if (ui.fatal) {
@@ -62,7 +63,7 @@ export function render() {
     const retry = document.createElement("button");
     retry.className = "text-btn";
     retry.type = "button";
-    retry.textContent = "重试";
+    retry.textContent = COPY.app.retry;
     retry.addEventListener("click", () => void boot());
     wrap.append(retry);
     app.replaceChildren(wrap);
@@ -83,8 +84,8 @@ export function render() {
     reconcile(saved, [savedHead, savedWrap]);
   } else {
     savedHint.textContent = state.temps.length
-      ? "拖入网页，或右键新建文件夹。"
-      : "右键新建文件夹。";
+      ? COPY.hints.pinnedEmptyWithTemps
+      : COPY.hints.pinnedEmpty;
     reconcile(saved, [savedHead, savedHint]);
   }
 
