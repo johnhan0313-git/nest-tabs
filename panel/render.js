@@ -36,7 +36,6 @@ function ensureShell() {
   status.hidden = true;
   saved = document.createElement("section");
   saved.className = "tree";
-  saved.setAttribute("aria-label", COPY.sections.pinned);
   savedHead = sectionTitle(COPY.sections.pinned);
   savedWrap = document.createElement("div");
   bindSectionDrop(saved);

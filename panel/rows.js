@@ -10,7 +10,7 @@ import {
 import { rowKey, rowKind } from "../lib/rowKey.js";
 import { active, busy, refresh, state, tabs, ui } from "./state.js";
 import { render } from "./render.js";
-import { favicon, folderIcon, hint, hoverAction, nameBlock, reconcile } from "./dom.js";
+import { favicon, folderIcon, hoverAction, nameBlock, reconcile } from "./dom.js";
 import { appendOverlays } from "./menu.js";
 import { bindFolderPeek, closePeek } from "./peek.js";
 import { clearDragMarks, onDragOver, onDrop } from "./dnd.js";
@@ -194,7 +194,6 @@ export function renderTemps() {
   if (!tempsSection) {
     tempsSection = document.createElement("section");
     tempsSection.className = "temps";
-    tempsSection.setAttribute("aria-label", COPY.sections.temporary);
     tempsHead = document.createElement("div");
     tempsHead.className = "section-head";
     const title = document.createElement("h2");

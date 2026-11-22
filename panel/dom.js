@@ -43,7 +43,8 @@ export function sectionAction(text, onClick) {
 }
 
 export function settingsIcon() {
-  return svgPath("M8 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12.5 8.5c.2-.6.5-1.1.9-1.6l.7-.7-1.4-1.4-.7.7c-.5.4-1 .7-1.6.9h-.8c-.6-.2-1.1-.5-1.6-.9l-.7-.7-1.4 1.4.7.7c.4.5.7 1 .9 1.6v.8c-.2.6-.5 1.1-.9 1.6l-.7.7 1.4 1.4.7-.7c.5-.4 1-.7 1.6-.9h.8c.6.2 1.1.5 1.6.9l.7.7 1.4-1.4-.7-.7c-.4-.5-.7-1-.9-1.6v-.8z", false);
+  // 6-tooth cog, stroke-rendered
+  return svgPath("M8 2v2.2M11.3 3.3 9.9 5.1M14 6.7l-1.8 1M15 10h-2.2M13.7 13.3 11.9 12M10 15v-2.2M6.7 13.7 8.1 12M4 11.3l1.8-1M3 8h2.2M4.3 4.7 6.1 6M6 3l1.9 1.8", false);
 }
 
 export function nameBlock(name) {

@@ -17,9 +17,7 @@ export function renderSearch() {
   }
   const header = document.createElement("header");
   header.className = "top";
-  const bar = document.createElement("div");
-  bar.className = "top-bar";
-  const wrap = document.createElement("label");
+  const wrap = document.createElement("div");
   wrap.className = "find-wrap";
   wrap.append(searchIcon());
   const input = document.createElement("input");
@@ -51,9 +49,8 @@ export function renderSearch() {
       if (ui.dirty) void refresh();
     }, 120);
   });
-  wrap.append(input);
-  bar.append(wrap, renderSettingsButton());
-  header.append(bar);
+  wrap.append(input, renderSettingsButton());
+  header.append(wrap);
   topEl = header;
   return header;
 }

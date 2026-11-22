@@ -99,12 +99,6 @@ button {
   background: var(--bg);
 }
 
-.top-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .find-wrap {
   display: flex;
   align-items: center;
@@ -117,6 +111,21 @@ button {
 }
 
 .find-wrap svg { width: 14px; height: 14px; display: block; flex: none; }
+
+.find-wrap .settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-right: -4px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.find-wrap .settings-btn:hover { background: var(--hover); color: var(--text); }
+.find-wrap .settings-btn svg { width: 14px; height: 14px; }
 
 .find {
   flex: 1;
@@ -292,20 +301,6 @@ button {
 }
 
 .section-action:hover { color: var(--text); }
-
-.settings-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex: none;
-  border-radius: 8px;
-  color: var(--muted);
-}
-
-.settings-btn:hover { background: var(--hover); color: var(--text); }
-.settings-btn svg { width: 16px; height: 16px; }
 
 .icon-btn {
   width: 22px;
