@@ -89,8 +89,11 @@ npm test          # 等价于 node --test lib/*.test.js
 - **background.js**：监听 `tabs.onCreated/onUpdated/onRemoved/onReplaced` 维护 `temps`
   （标题/图标类更新跳过全量 `tabs.query`）；`alarms.sweep` 每分钟清扫过期标签
   （同时把 `chrome://` 等内部页面移出跟踪，但不关闭其标签）；
-  用 `ownTabIds / pendingUrls / suppressNewTemps` 抑制自家打开的标签被误记为临时标签；
-  安装/启动时收编并重绑定现有标签。
+  用 `ownTabIds / pendingUrls / suppressNewTemps` 抑制自家打开的标签被误记为临时标签，
+  其中 `ownTabIds / pendingUrls` 持久化到 `storage.session`（MV3 SW 空闲回收后不丢，
+  浏览器重启自动清空；`pendingUrls` 用过期时间戳惰性判断，替代会随 SW 回收丢失的
+  `setTimeout` 删除）；启动时轮询等到首个标签出现再收编（最多 5 秒），
+  替代原先固定等待 1500ms。
 - **图标取用**：`faviconSources()` 按 保存的真实图标 → Chrome 内置 `_favicon`
   （本地缓存，内网/离线可用，需 `favicon` 权限）→ Google s2 兜底 逐级回退，
   全部失败时显示占位块。
