@@ -1,5 +1,22 @@
 import { faviconSources } from "../lib/model.js";
 
+/**
+ * 按位置把 parent 的子节点对齐到 els：相同元素原地保留，
+ * 只移动错位元素、删除多余尾部。键控复用的前提——
+ * 调用方保证 els[i] 就是第 i 位应该存在的元素。
+ */
+export function reconcile(parent, els) {
+  let anchor = parent.firstElementChild;
+  for (const el of els) {
+    if (el === anchor) {
+      anchor = anchor.nextElementSibling;
+      continue;
+    }
+    parent.insertBefore(el, anchor || null);
+  }
+  while (parent.childElementCount > els.length) parent.removeChild(parent.lastElementChild);
+}
+
 export function message(text) {
   const p = document.createElement("p");
   p.className = "center";

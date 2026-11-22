@@ -25,9 +25,9 @@ background.js          Service Worker：标签生命周期监听 + TTL 定时清
 sidepanel.html/css     侧边栏外壳与样式
 sidepanel.js           入口：全局事件绑定、启动
 panel/state.js         共享状态（ui/state/tabs/active）与刷新、闪提示、提交
-panel/render.js        顶层渲染编排（分区、滚动/焦点保持）
-panel/rows.js          树与临时标签行：文件夹/网页/临时行、折叠动画、重命名
-panel/dom.js           通用 DOM/SVG 小部件（图标、按钮、占位）
+panel/render.js        顶层渲染编排：持久 shell + 槽位对齐，只重建变化的行
+panel/rows.js          树与临时标签行：行级键控复用（rowCache）、折叠动画、重命名
+panel/dom.js           通用 DOM/SVG 小部件（图标、按钮、占位）与子节点对齐原语 reconcile
 panel/menu.js          右键菜单、确认框、浮层翻转
 panel/peek.js          折叠文件夹的 hover 预览卡片
 panel/search.js        搜索框、结果列表（本地树 + 历史）
@@ -98,5 +98,13 @@ npm test          # 等价于 node --test lib/*.test.js
   动作 / 拖放 / DOM 小部件），模块间用 ESM live binding 共享 `state/tabs/active/ui`；
   监听 storage 与 tabs 变化做防抖刷新；编辑、拖拽、菜单等 `busy()` 状态下挂起刷新
   并标记 `dirty`，避免打断用户操作。
+- **键控渲染（keyed diff）**：渲染不再整树重建。顶层 shell（搜索头 / 滚动区 / 状态 /
+  已固定区 / 临时区 / 结果框）整块持久化，行级 `rowCache` 按「id → key」复用——
+  key 覆盖构建时读取的全部输入（编辑/拖拽/菜单浮层坐标、折叠态、当前页匹配、
+  剩余时间文本等），只有 key 变化的行才重建 DOM。收益：未变的行保留原元素与事件
+  监听，焦点、滚动、IME 合成天然不丢，favicon 不随渲染重复请求；
+  拖拽标记（`dragging`/`drop-*`）改由 `clearDragMarks()` 显式清理，
+  搜索框聚焦时不回写 value（保护输入法）。注意：temp 对象没有 `type` 字段
+  （靠存在于 `state.temps` 隐式表意），行路由按 `folder → pin → 其余即 temp` 判断。
 - **lib/**：不依赖 Chrome API 的纯函数，是唯一可单测的层；UI 与 SW 只做编排。
   `normalizeLoaded` 会在加载时修剪损坏数据（未知节点、非法字段），保证渲染层永远拿到合法结构。

@@ -3,7 +3,17 @@ import { app, refresh, state, tabs, ui } from "./state.js";
 import { favicon, folderIcon, searchIcon } from "./dom.js";
 import { focusTab, openUrl, save } from "./actions.js";
 
+// 搜索头整块持久化：保住输入焦点/光标与 IME 合成状态，不再整块重建
+let topEl = null;
+let hitsEl = null;
+
 export function renderSearch() {
+  if (topEl) {
+    const current = topEl.querySelector(".find");
+    // 聚焦时不碰 value：IME 合成期间 ui.query 落后于输入框，写回会打断输入
+    if (current && document.activeElement !== current && current.value !== ui.query) current.value = ui.query;
+    return topEl;
+  }
   const header = document.createElement("header");
   header.className = "top";
   const wrap = document.createElement("label");
@@ -40,16 +50,19 @@ export function renderSearch() {
   });
   wrap.append(input);
   header.append(wrap);
+  topEl = header;
   return header;
 }
 
 export function renderHits() {
+  if (hitsEl) return hitsEl;
   const box = document.createElement("div");
   box.className = "hits";
   box.id = "hits";
   box.hidden = true;
   box.setAttribute("role", "listbox");
   box.setAttribute("aria-label", "搜索结果");
+  hitsEl = box;
   return box;
 }
 

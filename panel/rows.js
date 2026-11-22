@@ -8,10 +8,10 @@ import {
 } from "../lib/model.js";
 import { active, busy, refresh, state, tabs, ui } from "./state.js";
 import { render } from "./render.js";
-import { favicon, folderIcon, hint, hoverAction, nameBlock } from "./dom.js";
+import { favicon, folderIcon, hint, hoverAction, nameBlock, reconcile } from "./dom.js";
 import { appendOverlays } from "./menu.js";
 import { bindFolderPeek, closePeek } from "./peek.js";
-import { onDragOver, onDrop } from "./dnd.js";
+import { clearDragMarks, onDragOver, onDrop } from "./dnd.js";
 import { finishRename, focusTab, onCloseTemp, onNewTab, openUrl, save, closePinnedTabs } from "./actions.js";
 import { sameUrl } from "./util.js";
 
@@ -19,15 +19,77 @@ const foldMotions = new WeakMap();
 let foldingCount = 0;
 let openTimer = 0;
 
-export function renderNodes(nodes, depth) {
-  const wrap = document.createElement("div");
-  for (const node of nodes) {
-    wrap.append(node.type === "folder" ? renderFolder(node, depth) : renderPin(node, depth));
-  }
-  return wrap;
+// 行级键控缓存：id -> { key, gen, wrap, el }。
+// 每次渲染重新计算 key，只有 key 变化的行才重建 DOM——
+// 未变的行保留原元素（含事件监听与 <img>，不再重复请求 favicon）。
+const rowCache = new Map();
+let rowGen = 0;
+
+export function beginRowRender() {
+  rowGen += 1;
 }
 
-function renderFolder(folder, depth) {
+export function pruneRowCache() {
+  for (const [id, entry] of rowCache) {
+    if (entry.gen !== rowGen) rowCache.delete(id);
+  }
+}
+
+function overlayKey(id) {
+  // 菜单/确认框挂在行内且跟随坐标定位：坐标变化也要重建这一行
+  if (ui.menuId === id) return `:m${ui.menuX},${ui.menuY}`;
+  if (ui.confirm?.id === id) return `:c${ui.menuX},${ui.menuY}`;
+  return "";
+}
+
+/**
+ * key 覆盖「构建时读取过的全部输入」：复用的前提是新旧对象在这些值上
+ * 完全一致，闭包里捕获的旧对象与当前状态行为等价；写入类操作都按 id
+ * 落库，不依赖对象身份。
+ */
+function rowKey(node, depth) {
+  const shared = `${node.id}:${depth}:${ui.editingId === node.id ? 1 : 0}:${ui.dragging?.id === node.id ? 1 : 0}${overlayKey(node.id)}`;
+  if (node.type === "folder") {
+    return `f:${shared}:${node.collapsed ? 1 : 0}:${node.name}`;
+  }
+  if (node.type === "pin") {
+    const current = sameUrl(active.url, node.url) ? 1 : 0;
+    const live = tabs.some((tab) => sameUrl(tab.url, node.url)) ? 1 : 0;
+    return `p:${shared}:${current}:${live}:${itemName(node)}:${node.url}:${node.favIconUrl || ""}`;
+  }
+  const current = node.tabId === active.id ? 1 : 0;
+  const remain = remainingMs(node.openedAt, Date.now(), state.settings.tempTtlHours);
+  const left = remain == null ? "" : formatRemaining(remain);
+  // tabId 会因崩溃重绑定而变（url 不变），必须进 key
+  return `t:${shared}:${current}:${node.tabId}:${itemName(node)}:${node.url}:${node.favIconUrl || ""}:${left}`;
+}
+
+export function rowFor(node, depth) {
+  const key = rowKey(node, depth);
+  const hit = rowCache.get(node.id);
+  if (hit && hit.key === key) {
+    hit.gen = rowGen;
+    if (node.type === "folder") syncFolderChildren(hit, node, depth);
+    return hit.el;
+  }
+  const entry = { key, gen: rowGen, wrap: null };
+  // temp 对象没有 type 字段（靠存在于 state.temps 隐式表意），故先判 pin，其余即 temp
+  entry.el = node.type === "folder"
+    ? renderFolder(node, depth, entry)
+    : node.type === "pin"
+      ? renderPin(node, depth)
+      : renderTemp(node);
+  rowCache.set(node.id, entry);
+  return entry.el;
+}
+
+function syncFolderChildren(entry, folder, depth) {
+  // 折叠中的内容不可见：跳过，展开时 collapsed 变化会触发整块重建
+  if (folder.collapsed || !entry.wrap) return;
+  reconcile(entry.wrap, folder.children.map((child) => rowFor(child, depth + 1)));
+}
+
+function renderFolder(folder, depth, entry) {
   const block = document.createElement("div");
   const row = rowShell(folder, "folder", depth);
   if (ui.editingId === folder.id) {
@@ -44,8 +106,11 @@ function renderFolder(folder, depth) {
   const clip = document.createElement("div");
   clip.className = "fold-clip";
   if (folder.collapsed) clip.inert = true;
-  if (folder.children.length) clip.append(renderNodes(folder.children, depth + 1));
+  const wrap = document.createElement("div");
+  clip.append(wrap);
   fold.append(clip);
+  reconcile(wrap, folder.children.map((child) => rowFor(child, depth + 1)));
+  entry.wrap = wrap;
   bindActivate(main, folder, () => {
     closePeek();
     const closing = !folder.collapsed;
@@ -130,22 +195,37 @@ function renderTemp(temp) {
   return row;
 }
 
+// 临时区整节持久化：head / 提示 / 新标签按钮只建一次，行按键复用。
+let tempsSection = null;
+let tempsHead = null;
+let ttlSelect = null;
+let tempsHint = null;
+let newtabButton = null;
+
 export function renderTemps() {
-  const section = document.createElement("section");
-  section.className = "temps";
-  section.setAttribute("aria-label", "临时");
-  const head = document.createElement("div");
-  head.className = "section-head";
-  const title = document.createElement("h2");
-  title.textContent = "临时";
-  head.append(title, renderTtl());
-  section.append(head);
+  if (!tempsSection) {
+    tempsSection = document.createElement("section");
+    tempsSection.className = "temps";
+    tempsSection.setAttribute("aria-label", "临时");
+    tempsHead = document.createElement("div");
+    tempsHead.className = "section-head";
+    const title = document.createElement("h2");
+    title.textContent = "临时";
+    ttlSelect = renderTtl();
+    tempsHead.append(title, ttlSelect);
+    tempsHint = hint("新打开的网页会先出现在这里。");
+    newtabButton = renderNewTab();
+  }
+  const ttl = state.settings.tempTtlHours;
+  if (document.activeElement !== ttlSelect && ttlSelect.value !== String(ttl)) ttlSelect.value = String(ttl);
 
   const temps = sortedTemps(state.temps);
-  if (!temps.length) section.append(hint("新打开的网页会先出现在这里。"));
-  for (const temp of temps) section.append(renderTemp(temp));
-  section.append(renderNewTab());
-  return section;
+  const items = [tempsHead];
+  for (const temp of temps) items.push(rowFor(temp, 0));
+  if (!temps.length) items.push(tempsHint);
+  items.push(newtabButton);
+  reconcile(tempsSection, items);
+  return tempsSection;
 }
 
 function renderTtl() {
@@ -307,6 +387,8 @@ function mainButton(item, kind) {
   });
   main.addEventListener("dragend", () => {
     ui.dragging = null;
+    // 行不再整树重建：拖拽标记（dragging/drop-*）由命令式添加，需显式清理
+    clearDragMarks();
     if (ui.dirty) void refresh();
     else render();
   });

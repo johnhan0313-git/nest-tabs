@@ -3,6 +3,16 @@ import { fail, state, ui } from "./state.js";
 import { render } from "./render.js";
 import { pinAt, save } from "./actions.js";
 
+/**
+ * 拖拽期间的 dragging / drop-* 标记是命令式加到元素上的；
+ * 行改为按键复用后不再靠整树重建清掉，拖拽结束时显式清理。
+ */
+export function clearDragMarks() {
+  for (const el of document.querySelectorAll(".dragging, .drop-into, .drop-before, .drop-after")) {
+    el.classList.remove("dragging", "drop-into", "drop-before", "drop-after");
+  }
+}
+
 export function onDragOver(event, row) {
   if (!ui.dragging || ui.dragging.id === row.dataset.id) return;
   const kind = row.dataset.kind;
@@ -35,6 +45,7 @@ export async function onDrop(event, targetId) {
   const drag = ui.dragging;
   const mode = event.currentTarget?.dataset.dropMode || "into";
   ui.dragging = null;
+  clearDragMarks();
   if (!drag || drag.id === targetId) {
     render();
     return;
@@ -78,6 +89,7 @@ export function bindSectionDrop(section) {
     event.preventDefault();
     const drag = ui.dragging;
     ui.dragging = null;
+    clearDragMarks();
     section.classList.remove("drop-into");
     if (drag?.kind === "temp") void pinAt(drag.id, null, Number.MAX_SAFE_INTEGER, "");
   });
