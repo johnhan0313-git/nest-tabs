@@ -49,6 +49,21 @@ export function sectionAction(text, onClick) {
   return button;
 }
 
+export function sectionIconAction(icon, title, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "section-icon-action";
+  button.title = title;
+  button.setAttribute("aria-label", title);
+  button.append(icon);
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+export function importIcon() {
+  return svgPath("M8 3v8M5 8l3 3 3-3M3 13h10", false);
+}
+
 export function nameBlock(name) {
   const copy = document.createElement("span");
   copy.className = "copy";

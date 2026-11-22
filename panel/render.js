@@ -1,5 +1,5 @@
 import { app, boot, state, ui } from "./state.js";
-import { hint, message, reconcile, sectionAction, sectionTitle } from "./dom.js";
+import { hint, importIcon, message, reconcile, sectionIconAction, sectionTitle } from "./dom.js";
 import { beginRowRender, pruneRowCache, renderTemps, rowFor } from "./rows.js";
 import { flipFloating, renderMenu } from "./menu.js";
 import { renderHits, renderSearch, paintResults } from "./search.js";
@@ -39,7 +39,7 @@ function ensureShell() {
   saved.className = "tree";
   saved.setAttribute("aria-label", "已固定");
   savedHead = sectionTitle("已固定");
-  savedHead.append(sectionAction("导入标签组", () => void onImportTabGroups()));
+  savedHead.append(sectionIconAction(importIcon(), "导入标签组", () => void onImportTabGroups()));
   savedWrap = document.createElement("div");
   savedHint = hint("");
   bindSectionDrop(saved);
@@ -83,8 +83,8 @@ export function render() {
     reconcile(saved, [savedHead, savedWrap]);
   } else {
     savedHint.textContent = state.temps.length
-      ? "把下面的网页拖到这里，或在空白处右键新建文件夹。"
-      : "在空白处右键新建文件夹。";
+      ? "拖入网页，或右键新建文件夹。"
+      : "右键新建文件夹。";
     reconcile(saved, [savedHead, savedHint]);
   }
 

@@ -174,15 +174,10 @@ function renderTemp(temp) {
   } else {
     const main = mainButton(temp, "temp");
     main.append(favicon(temp.url, temp.favIconUrl), nameBlock(itemName(temp)));
-    const remain = remainingMs(temp.openedAt, Date.now(), state.settings.tempTtlHours);
-    if (remain != null) {
-      const meta = document.createElement("span");
-      meta.className = "meta";
-      meta.textContent = formatRemaining(remain);
-      main.append(meta);
-    }
     bindActivate(main, temp, () => void focusTab(temp.tabId, temp.url));
-    row.append(main, hoverAction("关闭", "x", () => void onCloseTemp(temp.id)));
+    const remain = remainingMs(temp.openedAt, Date.now(), state.settings.tempTtlHours);
+    const closeTitle = remain == null ? "关闭" : `关闭（${formatRemaining(remain)}）`;
+    row.append(main, hoverAction(closeTitle, "x", () => void onCloseTemp(temp.id)));
   }
   appendOverlays(row, temp.id, "temp");
   return row;
@@ -206,7 +201,7 @@ export function renderTemps() {
     title.textContent = "临时";
     ttlSelect = renderTtl();
     tempsHead.append(title, ttlSelect);
-    tempsHint = hint("新打开的网页会先出现在这里。");
+    tempsHint = hint("新网页会出现在这里。");
     newtabButton = renderNewTab();
   }
   const ttl = state.settings.tempTtlHours;
@@ -234,11 +229,11 @@ function renderTtl() {
   }
   select.addEventListener("change", () => {
     const hours = Number(select.value);
-    const label = TTL_OPTIONS.find((item) => item.hours === hours)?.label || "24 小时后关闭";
+    const label = TTL_OPTIONS.find((item) => item.hours === hours)?.label || "24 小时";
     void save((draft) => {
       draft.settings.tempTtlHours = hours;
       return draft;
-    }, hours ? `已改为${label}` : "临时标签不再自动关闭");
+    }, hours ? `已设为 ${label}` : "临时标签不再自动关闭");
   });
   return select;
 }
@@ -251,7 +246,7 @@ function renderNewTab() {
   plus.className = "plus";
   plus.textContent = "+";
   const label = document.createElement("span");
-  label.textContent = "新标签页";
+  label.textContent = "新标签";
   button.append(plus, label);
   button.addEventListener("click", () => void onNewTab());
   return button;
